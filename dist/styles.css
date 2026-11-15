@@ -317,14 +317,46 @@ h1 em {
   will-change:transform
 }
 
-.painting-world>img {
+.painting {
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  user-select:none
+}
+
+.painting-tile {
+  position:absolute;
   display:block;
-  height:900px;
-  width:19207px;
   max-width:none;
   pointer-events:none;
   user-select:none;
-  filter:brightness(1.13) saturate(.83) contrast(.95)
+  opacity:0
+}
+
+.painting-tile.loaded {
+  opacity:1
+}
+
+.artwork-status {
+  position:absolute;
+  top:24px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:8px 14px;
+  background:#f2ead8ed;
+  border:1px solid #b3a38477;
+  font-size:10px;
+  letter-spacing:2px;
+  cursor:pointer
+}
+
+.artwork-status[hidden] {
+  display:none
+}
+
+.artwork-status:disabled {
+  color:#8d816b;
+  cursor:default
 }
 
 .scene-shade {
@@ -332,7 +364,7 @@ h1 em {
   inset:0;
   pointer-events:none;
   box-shadow:inset 0 15px 30px #55402425,inset 0 -15px 20px #5c462320;
-  background:linear-gradient(90deg,#f2e7cc55,transparent 24%,transparent 90%,#41342112)
+  background:none
 }
 
 .scene-label {
@@ -896,7 +928,7 @@ h2 {
   border-radius:50%;
   padding:0;
   background:transparent;
-  border:2px solid transparent;
+  border:4px solid transparent;
   cursor:pointer;
   transition:background .3s
 }
@@ -908,24 +940,24 @@ h2 {
 }
 
 .hotspot.discovered {
-  border:2px solid #9c4b39bb;
-  box-shadow:0 0 0 5px #eee1c533;
+  border:4px solid #9c4b39bb;
+  box-shadow:0 0 0 10px #eee1c533;
   background:#e5c99522
 }
 
 .hotspot.discovered:after {
   content:'✓';
   position:absolute;
-  right:-10px;
-  top:-10px;
+  right:-20px;
+  top:-20px;
   background:var(--red);
   color:#f2e5cb;
   font-family:var(--sans);
-  width:20px;
-  height:20px;
+  width:40px;
+  height:40px;
   border-radius:50%;
-  font-size:13px;
-  line-height:20px
+  font-size:26px;
+  line-height:40px
 }
 
 .hint-ring {
@@ -2090,3 +2122,9 @@ dialog[open] {
   }
 }
 
+
+/* 纸纹留在页面底层，避免覆盖原画像素；原图自身保留绢本纹理。 */
+.paper-grain { z-index: 0; }
+.masthead, main { position: relative; z-index: 1; }
+#nativeView { font-size: 9px; height: 25px; letter-spacing: 0; }
+.artwork-credit a { color: var(--red); text-decoration: underline; text-underline-offset: 3px; }

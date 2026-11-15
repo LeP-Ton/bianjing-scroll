@@ -34,6 +34,9 @@ jobs:
         run: |
           test -s dist/index.html
           node --check dist/app.js
+          node --check dist/artwork.js
+          node --check dist/assets/painting/manifest.js
+          node --test tests/artwork.test.mjs
 
       - name: 配置 Pages
         uses: actions/configure-pages@v5

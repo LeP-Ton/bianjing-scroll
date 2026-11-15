@@ -7,8 +7,10 @@
   <meta name="description" content="走进《清明上河图》，寻六件日常，见一城烟火。">
   <title>入画 · 汴京寻物</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='4' fill='%239a4636'/%3E%3Ctext x='24' y='34' text-anchor='middle' font-size='32' fill='%23f3e8cf' font-family='serif'%3E画%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="styles.css?v=original-1">
+  <script src="assets/painting/manifest.js" defer></script>
+  <script src="artwork.js?v=original-1" defer></script>
+  <script src="app.js?v=original-1" defer></script>
 </head>
 <body>
   <svg class="svg-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -46,14 +48,23 @@
     <section class="intro"><div><div class="eyebrow"><span class="red-line"></span>展卷 · 入梦 · 寻常</div><h1>一卷繁华，<em>千年人间。</em></h1></div><div class="intro-note"><span>循着小物，走进大宋日常。</span><p>北宋 · 张择端《清明上河图》<span class="tiny-seal">宋</span></p></div></section>
     <section class="game-frame" id="gameFrame" aria-label="清明上河图寻物画卷">
       <div class="scene" id="scene" tabindex="0" aria-label="拖动画卷或使用方向键浏览，滚轮缩放">
-        <div class="painting-world" id="paintingWorld"><img src="assets/qingming.jpg" id="painting" alt="清明上河图长卷：汴河、虹桥、船只与街市" draggable="false"><div id="hotspots"></div></div>
+        <div class="painting-world" id="paintingWorld"><div id="painting" class="painting" role="img" aria-label="清明上河图高清原卷：汴河、虹桥、船只与街市"></div><div id="hotspots"></div></div>
         <div class="scene-shade" aria-hidden="true"></div>
         <div class="scene-label"><span class="chapter-number">壹</span><span id="sceneTitle">虹桥春市</span><span class="scene-rule"></span><small id="sceneSubtitle">人来船往，皆是生活</small></div>
         <aside class="quest-sheet" id="questSheet"><div class="quest-heading"><div><span class="small-kicker">今日入画</span><h2>寻物笺</h2></div><div class="progress-count"><strong id="foundCount">0</strong><span>/ <span id="totalCount">6</span></span></div></div><p class="quest-instruction">六件小物，藏在这一卷烟火里。</p><div class="item-grid" id="itemGrid"></div><div class="quest-bottom"><span id="questStatus"><i></i>静心观画，慢慢寻找</span><button id="hintBtn"><svg><use href="#i-search"/></svg>借一缕灵光</button></div></aside>
         <div class="location-seal" aria-hidden="true">汴<br>京<br><span>春日</span></div>
         <div class="scene-bottom"><span class="drag-guide"><svg viewBox="0 0 26 18"><path d="M1 9H25M6 4L1 9L6 14M20 4L25 9L20 14"/></svg><span>拖动画卷，移步寻物</span></span><button class="collapse-list" id="collapseBtn" aria-expanded="true">收起寻物笺</button></div>
-        <div class="view-tools"><button id="zoomIn" aria-label="放大画卷">＋</button><span id="zoomLabel">100<small>%</small></span><button id="zoomOut" aria-label="缩小画卷">－</button><span class="tool-line"></span><button id="resetView" aria-label="回到本卷中心"><svg viewBox="0 0 24 24"><path d="M8 4H4V8M16 4H20V8M4 16V20H8M20 16V20H16M8 12H16M12 8V16"/></svg></button><button id="fullscreenBtn" aria-label="全屏观画"><svg viewBox="0 0 24 24"><path d="M9 3H3V9M15 3H21V9M3 15V21H9M21 15V21H15"/></svg></button></div>
+        <div class="view-tools">
+          <button id="zoomIn" aria-label="放大画卷">＋</button>
+          <span id="zoomLabel">100<small>%</small></span>
+          <button id="zoomOut" aria-label="缩小画卷">－</button>
+          <button id="nativeView" aria-label="按原图像素查看" title="原图像素 1:1">1:1</button>
+          <span class="tool-line"></span>
+          <button id="resetView" aria-label="回到本卷中心"><svg viewBox="0 0 24 24"><path d="M8 4H4V8M16 4H20V8M4 16V20H8M20 16V20H16M8 12H16M12 8V16"/></svg></button>
+          <button id="fullscreenBtn" aria-label="全屏观画"><svg viewBox="0 0 24 24"><path d="M9 3H3V9M15 3H21V9M3 15V21H9M21 15V21H15"/></svg></button>
+        </div>
         <div id="sceneToast" class="scene-toast" role="status"></div>
+        <button id="artworkStatus" class="artwork-status" hidden aria-live="polite">展卷中</button>
         <div id="hintRing" class="hint-ring" aria-hidden="true"><span>此间有物</span></div>
         <div class="loading-note" id="loadingNote"><span>展卷中</span><i></i></div>
       </div>
