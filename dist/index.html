@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#eee5d2">
+  <meta name="description" content="走进《清明上河图》，寻六件日常，见一城烟火。">
+  <title>入画 · 汴京寻物</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='4' fill='%239a4636'/%3E%3Ctext x='24' y='34' text-anchor='middle' font-size='32' fill='%23f3e8cf' font-family='serif'%3E画%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <svg class="svg-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+    <filter id="paper"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".12"/></feComponentTransfer><feBlend in="SourceGraphic" mode="multiply"/></filter>
+    <symbol id="i-hat" viewBox="0 0 80 58"><path d="M8 40Q24 31 39 10Q56 28 72 39Q44 51 8 40Z"/><path d="M11 40Q40 36 69 39M39 10L24 40M39 10L53 41M39 12L39 43M18 34Q40 31 62 33M24 27Q40 25 55 27M31 20L48 21M30 45Q34 56 40 47"/><path d="M14 42Q40 51 68 41"/></symbol>
+    <symbol id="i-fan" viewBox="0 0 80 58"><path d="M11 18Q40-5 69 18L40 48Z"/><path d="M40 48L17 15M40 48L27 10M40 48L39 7M40 48L51 10M40 48L62 15M36 46L44 51L40 55L34 49M17 25Q40 8 63 25M23 32Q40 18 57 32"/></symbol>
+    <symbol id="i-umbrella" viewBox="0 0 80 58"><path d="M8 28Q15 8 40 6Q65 8 72 28Q61 22 56 29Q47 23 40 29Q32 23 24 29Q17 23 8 28ZM40 6V46Q40 57 31 52L30 48M40 6Q26 13 24 28M40 6Q54 13 56 28M40 6V2M16 20Q40 15 64 20"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 80 58"><path d="M10 25L53 29L69 45M10 25L13 34L52 38M14 30L57 34M20 26L20 36M30 27L30 36M42 28L42 37M35 27L40 15L62 23L57 34M40 15L45 12L66 20L62 23M48 14L43 28M56 18L51 29"/><circle cx="35" cy="42" r="11"/><circle cx="35" cy="42" r="3"/><path d="M35 31V53M24 42H46M27 34L43 50M27 50L43 34M11 33L6 45"/></symbol>
+    <symbol id="i-jar" viewBox="0 0 80 58"><path d="M29 8Q40 4 51 8L50 14Q66 26 59 45Q55 53 40 53Q25 53 21 45Q14 26 30 14Z"/><ellipse cx="40" cy="8" rx="11" ry="3"/><path d="M29 13Q40 17 51 13M24 23Q40 29 57 23M22 42Q40 49 59 42M30 19Q24 27 26 35M49 20L53 26"/><path d="M33 31L45 30L48 40L34 42Z"/><path d="M38 33L42 39M43 33L38 38"/></symbol>
+    <symbol id="i-boat" viewBox="0 0 80 58"><path d="M5 38Q40 47 75 32L64 47Q38 57 15 47Z"/><path d="M19 41V29Q35 16 54 25L63 39M24 28L25 43M33 24L35 43M44 23L46 42M55 28L55 40M8 52Q20 48 30 53M42 55Q60 50 72 52M13 39L6 30M41 22V3L62 26L41 20M40 4L26 29"/></symbol>
+    <symbol id="i-bowl" viewBox="0 0 80 58"><ellipse cx="40" cy="19" rx="28" ry="9"/><path d="M12 19Q17 41 31 46L31 49Q40 53 49 49L49 46Q63 40 68 19M15 21Q40 35 66 21M23 28Q24 39 32 44M34 31L36 46M47 31L45 46M58 28Q56 39 49 44M31 46Q40 49 49 46"/><path d="M19 18Q39 12 61 18M23 21Q40 17 55 21"/></symbol>
+    <symbol id="i-bridge" viewBox="0 0 80 58"><path d="M4 47Q40 3 76 47M6 53Q40 13 74 53M10 40V31M20 29V21M30 22V13M40 19V9M50 22V13M60 29V21M70 40V31M8 31Q40-1 72 31M4 46L14 47M17 34L25 40M30 25L34 34M45 25L43 34M58 34L53 40M71 46L63 47M4 56Q17 52 28 56M45 56Q60 52 75 56"/></symbol>
+    <symbol id="i-shop" viewBox="0 0 80 58"><path d="M8 23Q22 20 31 8L49 8Q58 20 72 23L63 27H17ZM20 27V51H60V27M29 28V50M49 28V50M18 51H64M26 15H54M34 10L30 21M43 10L48 21M8 22L4 20M72 22L76 20M32 35H46M33 40H46"/><path d="M62 29H72V44H63M65 33L69 39"/></symbol>
+    <symbol id="i-tree" viewBox="0 0 80 58"><path d="M39 54L43 24L36 13M40 42L30 28M42 31L54 17M42 25L47 10M32 55L50 54M36 15Q15 8 15 39M35 17Q22 15 24 43M38 12Q26 4 15 12M47 10Q65 6 70 32M50 17Q61 14 63 44M48 14Q53 25 51 40M32 28Q13 24 10 47"/></symbol>
+    <symbol id="i-gate" viewBox="0 0 80 58"><path d="M13 53L17 25H63L67 53ZM7 24Q21 19 29 8H51Q60 20 73 24ZM14 18H65M26 10L21 20M38 9V21M50 9L58 21M33 53V41Q40 29 47 41V53M20 30H60M20 35H30M51 35H61M16 45H29M51 45H64"/></symbol>
+    <symbol id="i-basket" viewBox="0 0 80 58"><path d="M16 27L23 51Q40 57 57 51L64 27M24 25Q24 3 40 5Q57 4 57 25"/><ellipse cx="40" cy="27" rx="24" ry="7"/><path d="M20 36Q40 43 61 36M22 44Q40 51 58 44M27 31L31 53M38 33V54M50 32L47 54M59 31L54 52"/></symbol>
+    <symbol id="i-mast" viewBox="0 0 80 58"><path d="M39 54V5L43 3L44 54M40 6L10 49M43 9L69 49M16 44H64M31 54H53M25 19L56 16M37 5L43 3M10 49L17 53M64 48L71 53M40 21L22 33M44 25L60 35"/></symbol>
+    <symbol id="i-rope" viewBox="0 0 80 58"><ellipse cx="39" cy="30" rx="23" ry="22"/><ellipse cx="39" cy="30" rx="18" ry="17"/><ellipse cx="39" cy="30" rx="13" ry="12"/><ellipse cx="39" cy="30" rx="8" ry="7"/><path d="M38 7L35 11M48 8L45 12M57 14L52 17M61 24L55 25M61 35L55 33M54 47L50 42M43 52L42 46M30 50L31 44M20 43L25 39M16 30L22 29M20 18L25 22M27 11L30 16M39 23L44 19M39 35L33 39M58 42Q63 50 71 48L75 52"/></symbol>
+    <symbol id="i-canopy" viewBox="0 0 80 58"><path d="M8 43Q13 13 37 11Q61 11 71 40L64 46H13ZM13 42Q17 17 38 16M23 43Q24 19 42 13M34 44Q34 20 49 15M47 44Q46 24 57 20M58 43Q56 26 64 29M9 42Q40 50 72 40M18 26L60 25M14 34L67 33M13 49Q40 56 68 49"/></symbol>
+    <symbol id="i-camel" viewBox="0 0 80 58"><path d="M8 31L12 15L17 13L22 20L25 28Q28 28 32 17Q37 11 41 27Q46 29 50 19Q55 15 59 29L66 32L68 44L72 51H65L59 39L54 40L51 53H45L46 39H31L29 53H23L25 38L20 32L17 21L13 20L13 33ZM12 16L6 17L7 22L13 23M66 33L72 30L75 36M31 29Q43 34 59 30M10 22L6 42"/><path d="M14 17H15M33 26L36 20M51 28L54 23"/></symbol>
+    <symbol id="i-pole" viewBox="0 0 80 58"><path d="M5 12Q40 3 75 12M7 15Q40 7 73 15M14 14L8 35M16 14L28 35M65 14L53 35M67 14L73 35M6 35L10 50Q18 55 27 50L30 35M51 35L55 50Q63 55 72 50L75 35M8 41L28 41M9 46L27 46M53 41L73 41M54 46L72 46M14 35L16 52M22 35L21 52M59 35L61 52M67 35L66 52"/><ellipse cx="18" cy="35" rx="12" ry="3"/><ellipse cx="63" cy="35" rx="12" ry="3"/></symbol>
+    <symbol id="i-flatbridge" viewBox="0 0 80 58"><path d="M5 29L69 21L75 28L11 37ZM11 37V47M26 35V45M46 32V43M67 29V40M5 29V17L69 9V21M6 20L69 12M18 16V27M32 14V25M47 12V23M61 10V22M12 37V25L75 17V28M13 28L74 20M26 24V35M41 22V33M57 19V31M10 51Q23 46 34 50M46 48Q59 42 74 46"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="M15 15L21 21"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M3 10H7L12 5V19L7 14H3ZM16 8Q20 12 16 16M19 4Q26 12 19 20"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M3 4Q8 2 12 5Q16 2 21 4V20Q16 18 12 21Q8 18 3 20ZM12 5V21M6 8L9 9M6 12L9 13M15 9L18 8M15 13L18 12"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 8Q9 5 12 6Q17 6 14 10L12 12V14M12 17V18"/></symbol>
+  </defs></svg>
+  <div class="paper-grain" aria-hidden="true"></div>
+  <header class="masthead">
+    <a href="#" class="brand" aria-label="入画首页"><span class="brand-seal">入<br>画</span><div><span class="brand-name">汴京寻物</span><span class="brand-sub">一 卷 宋 人 烟 火</span></div></a>
+    <nav class="main-nav" aria-label="主导航"><button class="nav-link active" id="journeyNav">寻物之旅<span></span></button><button class="nav-link" id="collectionNav">宋人百物</button><button class="nav-link" id="overviewNav">画卷长览</button></nav>
+    <div class="header-actions"><button class="sound-btn" id="soundBtn" aria-label="听汴京" aria-pressed="false"><svg><use href="#i-sound"/></svg><span>听汴京</span><i></i></button><button class="icon-btn mobile-collection" id="mobileCollectionBtn" aria-label="宋人百物"><svg><use href="#i-book"/></svg></button><span class="header-divider"></span><button class="icon-btn" id="helpBtn" aria-label="游玩说明"><svg><use href="#i-help"/></svg></button></div>
+  </header>
+  <main>
+    <section class="intro"><div><div class="eyebrow"><span class="red-line"></span>展卷 · 入梦 · 寻常</div><h1>一卷繁华，<em>千年人间。</em></h1></div><div class="intro-note"><span>循着小物，走进大宋日常。</span><p>北宋 · 张择端《清明上河图》<span class="tiny-seal">宋</span></p></div></section>
+    <section class="game-frame" id="gameFrame" aria-label="清明上河图寻物画卷">
+      <div class="scene" id="scene" tabindex="0" aria-label="拖动画卷或使用方向键浏览，滚轮缩放">
+        <div class="painting-world" id="paintingWorld"><img src="assets/qingming.jpg" id="painting" alt="清明上河图长卷：汴河、虹桥、船只与街市" draggable="false"><div id="hotspots"></div></div>
+        <div class="scene-shade" aria-hidden="true"></div>
+        <div class="scene-label"><span class="chapter-number">壹</span><span id="sceneTitle">虹桥春市</span><span class="scene-rule"></span><small id="sceneSubtitle">人来船往，皆是生活</small></div>
+        <aside class="quest-sheet" id="questSheet"><div class="quest-heading"><div><span class="small-kicker">今日入画</span><h2>寻物笺</h2></div><div class="progress-count"><strong id="foundCount">0</strong><span>/ <span id="totalCount">6</span></span></div></div><p class="quest-instruction">六件小物，藏在这一卷烟火里。</p><div class="item-grid" id="itemGrid"></div><div class="quest-bottom"><span id="questStatus"><i></i>静心观画，慢慢寻找</span><button id="hintBtn"><svg><use href="#i-search"/></svg>借一缕灵光</button></div></aside>
+        <div class="location-seal" aria-hidden="true">汴<br>京<br><span>春日</span></div>
+        <div class="scene-bottom"><span class="drag-guide"><svg viewBox="0 0 26 18"><path d="M1 9H25M6 4L1 9L6 14M20 4L25 9L20 14"/></svg><span>拖动画卷，移步寻物</span></span><button class="collapse-list" id="collapseBtn" aria-expanded="true">收起寻物笺</button></div>
+        <div class="view-tools"><button id="zoomIn" aria-label="放大画卷">＋</button><span id="zoomLabel">100<small>%</small></span><button id="zoomOut" aria-label="缩小画卷">－</button><span class="tool-line"></span><button id="resetView" aria-label="回到本卷中心"><svg viewBox="0 0 24 24"><path d="M8 4H4V8M16 4H20V8M4 16V20H8M20 16V20H16M8 12H16M12 8V16"/></svg></button><button id="fullscreenBtn" aria-label="全屏观画"><svg viewBox="0 0 24 24"><path d="M9 3H3V9M15 3H21V9M3 15V21H9M21 15V21H15"/></svg></button></div>
+        <div id="sceneToast" class="scene-toast" role="status"></div>
+        <div id="hintRing" class="hint-ring" aria-hidden="true"><span>此间有物</span></div>
+        <div class="loading-note" id="loadingNote"><span>展卷中</span><i></i></div>
+      </div>
+      <div class="scroll-navigator"><div class="chapter-switch"><button id="prevChapter" aria-label="上一卷">‹</button><div><small id="chapterOrdinal">第一卷</small><span id="chapterName">虹桥春市</span></div><button id="nextChapter" aria-label="下一卷">›</button></div><div class="minimap-wrap"><div class="minimap" id="minimap" role="slider" tabindex="0" aria-label="画卷位置" aria-valuemin="0" aria-valuemax="100" aria-valuenow="55"><img src="assets/overview.jpg" alt="画卷全景导航"><div class="minimap-window" id="minimapWindow"></div><span class="map-pin p1">城郭</span><span class="map-pin p2">虹桥</span><span class="map-pin p3">汴河</span></div></div><button class="overview-button" id="mapExpand"><svg viewBox="0 0 24 24"><path d="M3 6L9 3L15 6L21 3V18L15 21L9 18L3 21ZM9 3V18M15 6V21"/></svg><span>长卷全览</span></button></div>
+    </section>
+    <footer class="page-footer"><p><span class="footer-mark">拾</span>寻一物，识一事，见一城。</p><span>不赶路，只入画。</span><button id="progressBtn">我的足迹 <span id="allProgress">〇</span><svg viewBox="0 0 20 20"><path d="M5 10H15M11 6L15 10L11 14"/></svg></button></footer>
+  </main>
+  <dialog id="detailDialog" class="detail-dialog" aria-label="物品百科"><button class="dialog-close" data-close aria-label="关闭百科">×</button><div id="detailContent"></div></dialog>
+  <dialog id="collectionDialog" class="collection-dialog"><button class="dialog-close" data-close aria-label="关闭图鉴">×</button><div class="eyebrow">宋 人 百 物</div><h2>寻常之物，亦有千秋。</h2><p class="dialog-lead">把画里的相遇，收进一部生活小史。</p><div class="category-tabs" id="categoryTabs"></div><div id="collectionGrid" class="collection-grid"></div><p class="collection-footnote">画中寻物 · 文物延伸鉴赏</p></dialog>
+  <dialog id="overviewDialog" class="overview-dialog"><button class="dialog-close" data-close aria-label="关闭长卷全览">×</button><div class="eyebrow">清 明 上 河 图</div><h2>汴京一日，尽在一卷。</h2><p class="dialog-lead">由郊野至城郭，点选一处，移步入画。</p><div class="full-scroll" id="fullScroll"><img src="assets/overview.jpg" alt="清明上河图全卷，点击画面可定位"></div><div class="overview-chapters" id="overviewChapters"></div><div class="artwork-credit">北宋 · 张择端 · 绢本设色<span>画卷采用用户提供图像</span></div></dialog>
+  <dialog id="helpDialog" class="help-dialog"><button class="dialog-close" data-close aria-label="关闭游玩说明">×</button><span class="help-seal">入画</span><h2>慢一点，才看得见。</h2><p>拖动画卷，或用方向键移步。<br>滚轮与 ＋ − 可细看笔墨。</p><p>按寻物笺找画中物件，轻点即可收录。<br>无从寻起时，借一缕灵光。</p><p class="muted">所遇皆可入册，进度自动留存于此设备。</p><button class="primary-btn" data-close>这就入画 <span>→</span></button></dialog>
+  <dialog id="completeDialog" class="complete-dialog"><button class="dialog-close" data-close aria-label="关闭完成页">×</button><span class="complete-seal">寻得</span><div class="eyebrow">此 卷 已 毕</div><h2>小物寻遍，人间未尽。</h2><p>六次相逢，记住一日汴京。</p><div id="completeObjects" class="complete-objects"></div><button class="primary-btn" id="continueBtn">再入下一卷 <span>→</span></button><button class="text-btn" id="reviewBtn">翻阅宋人百物</button></dialog>
+</body>
+</html>
