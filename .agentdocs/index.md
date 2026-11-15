@@ -1,18 +1,18 @@
 # 项目文档索引
 
-当前任务：会话-10起，用户明确要求提交到 GitHub 并部署 GitHub Pages，替代上一轮仅本地交付的决定。目标仓库为 `LeP-Ton/bianjing-scroll`，Pages 发布目录为 `dist/`。
+当前交付：会话-10起，用户明确要求提交到 GitHub 并部署 GitHub Pages，替代上一轮仅本地交付的决定。公开仓库为 [LeP-Ton/bianjing-scroll](https://github.com/LeP-Ton/bianjing-scroll)，公开 HTTPS 网站为 [入画 · 汴京寻物](https://lep-ton.github.io/bianjing-scroll/)，Pages 发布目录为 `dist/`。
 
 ## 当前重要变更
 
 - `workflow/20261115212009-deploy-github-pages.md`
   - 内容：会话-10起的 GitHub 建仓、源码提交、Pages 自动部署与线上验证。
   - 读取场景：修改仓库、部署目录、GitHub Actions 或排查线上资源路径时。
-  - 状态：部署配置已准备，等待推送与线上验证结果回填。
+  - 状态：完整 Git 历史已同步，Pages 工作流发布成功；Actions `43719089456` 的全部发布步骤通过，首页及主要资源请求均为 200。线上画卷加载、微光提示与斗笠发现计数已验证。
 
 - `workflow/20261115204810-create-qingming-scroll-game.md`
   - 内容：会话-1起的《清明上河图》寻物体验初建，包含三卷十四处寻物点、十七条百科、真实点位核验、青瓷馆藏参照和本地验证记录。
   - 读取场景：修改寻物点位、关卡、画卷拖拽缩放、图鉴、提示、声景或存档时。
-  - 状态：实现、本地主要流程验证及本地打包完成，交付包为 `outputs/qingming-scroll-local.zip`。按用户选择，不上传源码、不执行 Sites 发布。真实多点触控、实际声音听感与不同实体设备/浏览器尚未验证。
+  - 状态：该轮实现、本地主要流程验证及本地打包完成，交付包为 `outputs/qingming-scroll-local.zip`；当时按用户选择仅本地交付。后续 GitHub 与 Pages 发布见上方新记录；Sites 未发布。真实多点触控、实际声音听感与不同实体设备/浏览器尚未验证。
 
 ## 关键记忆
 
@@ -23,6 +23,8 @@
 - `assets/celadon.jpg` 为台北故宫南宋十三世纪龙泉窑青瓷莲瓣纹碗的官方参照图片（CC BY 4.0）；它不是画中同一件器物。
 - 进度只保存在当前浏览器；存储不可用时应保持基本游玩能力。
 - 恢复存档时只接受当前关卡白名单中的布尔发现记录；切关需取消延迟百科回调。画卷使用 `overflow:clip` 并在键盘聚焦热点时定位，防止内部滚动造成点位错位。
+- GitHub Pages 使用 `workflow` 发布类型；`.github/workflows/pages.yml` 只部署 `dist/`，仅文档更新不重复触发网页部署。部署提交为 `2c5d66f0e12e97021f30521427ba7d0ad1bc8967`。
+- 常规 Git HTTPS 传输被网络重置时，本次通过 `gh api` 精确同步 Git Database 对象并校验 SHA，保留原历史；同步辅助脚本仅放在工作区 `outputs/`，不进入仓库，也不保存凭据。
 - Sites 的项目标识以 `.openai/hosting.json` 为准，不为同一项目重复创建站点。
 
 ## 文档维护
