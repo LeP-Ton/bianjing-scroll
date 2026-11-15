@@ -21,7 +21,7 @@
 - [x] 六首独立乐谱编写
 - [x] 母带渲染、成品编码与时长/响度核验
 - [x] 本地浏览器验证声音设置与播放
-- [ ] GitHub 提交、Pages 部署与线上核验
+- [x] GitHub 提交、Pages 部署与线上核验
 
 ## 代码变更
 
@@ -88,8 +88,12 @@
 
 - 操作：提交至 GitHub，等待 Pages 工作流成功，核对线上页面和音频响应、原图哈希。
 - 预期：六曲七效上线，原 JPG 字节不变。
-- 状态：待验证。
+- 状态：通过。源码与音频部署提交 `0f6892762da4395fc2a4340b2051084ab9773078`，对应 [Actions 43730588210](https://github.com/LeP-Ton/bianjing-scroll/actions/runs/43730588210)，页面检查、上传与发布步骤全部成功。线上十三个音频均 200、字节数与清单一致，MP3 返回 `audio/mp3`、WAV 返回 `audio/wav`。浏览器六曲选单、配乐播放就绪、音效试听返回“再听”及暂停已确认，无控制台错误。最终面板截图为工作区 `outputs/audio-online-preview.jpg`。
 
 ## 当前进展与未验证项
 
-本地实现与验证完成，等待 GitHub / Pages 发布。原 JPG SHA256 仍为 `b36dc416b4dfa344c11997d6604260adb38c6a8e8151265c15bf265b11f9291b`，浏览器自然尺寸 38414 × 1800。未进行实际听审、跨浏览器或实体设备试听，不将这些结果写为已通过。
+实现与 GitHub / Pages 发布完成。原 JPG SHA256 仍为 `b36dc416b4dfa344c11997d6604260adb38c6a8e8151265c15bf265b11f9291b`，浏览器自然尺寸 38414 × 1800。未进行实际听审、跨浏览器或实体设备试听，不将这些结果写为已通过。
+
+额外交付位于工作区 `outputs/`：`ruhua-original-audio.zip`（六首 MP3、七种 WAV 与清单，22,612,223 字节）、`interaction-sounds-preview.wav`（七效顺序预览，9.12 秒）、`music-render-report.json`、`music-encoding-report.json` 和 `audio-online-check.json`。这些母带、预览和本机报告不进入网页仓库。
+
+发布过程中 GitHub API 曾返回临时 EOF，保留检查点续传成功；常规 Node HTTPS 复核连接失败后，改用系统网络栈完成十三项资源检查。没有将这些暂时网络问题误记为素材缺失或发布失败。
