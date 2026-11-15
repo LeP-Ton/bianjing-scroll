@@ -7,7 +7,7 @@
 - `workflow/20261115221347-original-resolution-artwork.md`
   - 内容：会话-20起的高清原图接入，包含原始 JPG 保留、原像素无损 WebP 切片、按视野加载、原始坐标统一与清晰度验证。
   - 读取场景：修改画卷图片、切片生成、加载缓存、像素缩放、寻物命中或原图下载时。
-  - 状态：原 JPG 哈希、21 片完整像素、7 项图片层测试、桌面 1:1、三卷点选及手机视口验证通过；待同步 GitHub 与 Pages 并核验线上结果。
+  - 状态：高清版本已上线。原 JPG 线上下载哈希与源文件一致，21 片完整像素、7 项图片层测试、桌面 1:1、三卷点选及手机视口验证通过；部署提交 `00a8cb0`，Actions `43724561381` 成功。
 
 - `workflow/20261115212009-deploy-github-pages.md`
   - 内容：会话-10起的 GitHub 建仓、源码提交、Pages 自动部署与线上验证。
@@ -30,7 +30,7 @@
 - `assets/celadon.jpg` 为台北故宫南宋十三世纪龙泉窑青瓷莲瓣纹碗的官方参照图片（CC BY 4.0）；它不是画中同一件器物。
 - 进度只保存在当前浏览器；存储不可用时应保持基本游玩能力。
 - 恢复存档时只接受当前关卡白名单中的布尔发现记录；切关需取消延迟百科回调。画卷使用 `overflow:clip` 并在键盘聚焦热点时定位，防止内部滚动造成点位错位。
-- GitHub Pages 使用 `workflow` 发布类型；`.github/workflows/pages.yml` 只部署 `dist/`，仅文档更新不重复触发网页部署。部署提交为 `2c5d66f0e12e97021f30521427ba7d0ad1bc8967`。
+- GitHub Pages 使用 `workflow` 发布类型；`.github/workflows/pages.yml` 只部署 `dist/`，仅文档更新不重复触发网页部署。当前高清版本部署提交为 `00a8cb0a1cc7b71ffced45a9cabb21a8ad29c1ba`。
 - 常规 Git HTTPS 传输被网络重置时，本次通过 `gh api` 精确同步 Git Database 对象并校验 SHA，保留原历史；同步辅助脚本仅放在工作区 `outputs/`，不进入仓库，也不保存凭据。
 - Sites 的项目标识以 `.openai/hosting.json` 为准，不为同一项目重复创建站点。
 
