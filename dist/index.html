@@ -7,8 +7,11 @@
   <meta name="description" content="走进《清明上河图》，寻六件日常，见一城烟火。">
   <title>入画 · 汴京寻物</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='4' fill='%239a4636'/%3E%3Ctext x='24' y='34' text-anchor='middle' font-size='32' fill='%23f3e8cf' font-family='serif'%3E画%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=direct-original-1">
-  <script src="app.js?v=direct-original-1" defer></script>
+  <link rel="stylesheet" href="styles.css?v=audio-1">
+  <script src="audio-catalog.js?v=audio-1" defer></script>
+  <script src="audio.js?v=audio-1" defer></script>
+  <script src="audio-ui.js?v=audio-1" defer></script>
+  <script src="app.js?v=audio-1" defer></script>
 </head>
 <body>
   <svg class="svg-library" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -40,7 +43,7 @@
   <header class="masthead">
     <a href="#" class="brand" aria-label="入画首页"><span class="brand-seal">入<br>画</span><div><span class="brand-name">汴京寻物</span><span class="brand-sub">一 卷 宋 人 烟 火</span></div></a>
     <nav class="main-nav" aria-label="主导航"><button class="nav-link active" id="journeyNav">寻物之旅<span></span></button><button class="nav-link" id="collectionNav">宋人百物</button><button class="nav-link" id="overviewNav">画卷长览</button></nav>
-    <div class="header-actions"><button class="sound-btn" id="soundBtn" aria-label="听汴京" aria-pressed="false"><svg><use href="#i-sound"/></svg><span>听汴京</span><i></i></button><button class="icon-btn mobile-collection" id="mobileCollectionBtn" aria-label="宋人百物"><svg><use href="#i-book"/></svg></button><span class="header-divider"></span><button class="icon-btn" id="helpBtn" aria-label="游玩说明"><svg><use href="#i-help"/></svg></button></div>
+    <div class="header-actions"><button class="sound-btn" id="soundBtn" aria-label="配乐与音效设置" aria-haspopup="dialog"><svg><use href="#i-sound"/></svg><span>听汴京</span><i></i></button><button class="icon-btn mobile-collection" id="mobileCollectionBtn" aria-label="宋人百物"><svg><use href="#i-book"/></svg></button><span class="header-divider"></span><button class="icon-btn" id="helpBtn" aria-label="游玩说明"><svg><use href="#i-help"/></svg></button></div>
   </header>
   <main>
     <section class="intro"><div><div class="eyebrow"><span class="red-line"></span>展卷 · 入梦 · 寻常</div><h1>一卷繁华，<em>千年人间。</em></h1></div><div class="intro-note"><span>循着小物，走进大宋日常。</span><p>北宋 · 张择端《清明上河图》<span class="tiny-seal">宋</span></p></div></section>
@@ -74,5 +77,18 @@
   <dialog id="overviewDialog" class="overview-dialog"><button class="dialog-close" data-close aria-label="关闭长卷全览">×</button><div class="eyebrow">清 明 上 河 图</div><h2>汴京一日，尽在一卷。</h2><p class="dialog-lead">由郊野至城郭，点选一处，移步入画。</p><div class="full-scroll" id="fullScroll"><img src="assets/overview.jpg" alt="清明上河图全卷，点击画面可定位"></div><div class="overview-chapters" id="overviewChapters"></div><div class="artwork-credit">北宋 · 张择端 · 绢本设色<span>画卷采用用户提供图像</span></div></dialog>
   <dialog id="helpDialog" class="help-dialog"><button class="dialog-close" data-close aria-label="关闭游玩说明">×</button><span class="help-seal">入画</span><h2>慢一点，才看得见。</h2><p>拖动画卷，或用方向键移步。<br>滚轮与 ＋ − 可细看笔墨。</p><p>按寻物笺找画中物件，轻点即可收录。<br>无从寻起时，借一缕灵光。</p><p class="muted">所遇皆可入册，进度自动留存于此设备。</p><button class="primary-btn" data-close>这就入画 <span>→</span></button></dialog>
   <dialog id="completeDialog" class="complete-dialog"><button class="dialog-close" data-close aria-label="关闭完成页">×</button><span class="complete-seal">寻得</span><div class="eyebrow">此 卷 已 毕</div><h2>小物寻遍，人间未尽。</h2><p>六次相逢，记住一日汴京。</p><div id="completeObjects" class="complete-objects"></div><button class="primary-btn" id="continueBtn">再入下一卷 <span>→</span></button><button class="text-btn" id="reviewBtn">翻阅宋人百物</button></dialog>
+  <dialog id="soundDialog" class="sound-dialog" aria-label="配乐与音效">
+    <button class="dialog-close" data-close aria-label="关闭声音设置">×</button>
+    <div class="eyebrow">声 入 画 中</div>
+    <h2>听汴京</h2>
+    <section id="musicSettings" hidden>
+      <div class="music-now"><span class="small-kicker">此刻</span><strong id="currentTrackTitle"></strong><div class="music-transport"><button id="previousTrack" aria-label="上一曲">‹</button><button id="musicPlayBtn" aria-label="播放配乐">奏乐</button><button id="nextTrack" aria-label="下一曲">›</button></div></div>
+      <label class="audio-range"><span>乐声</span><input id="musicVolume" type="range" min="0" max="100" step="1" aria-label="配乐音量"><output id="musicVolumeValue"></output></label>
+      <div class="track-list" id="trackList" aria-label="配乐曲目"></div>
+    </section>
+    <div class="effects-settings"><div class="effects-heading"><label class="audio-toggle"><span>声响</span><input id="effectsEnabled" type="checkbox" aria-label="开启交互音效"><span class="audio-switch" aria-hidden="true"></span></label><button class="test-effect" id="testEffect">试音</button></div><label class="audio-range"><span>轻重</span><input id="effectsVolume" type="range" min="0" max="100" step="1" aria-label="音效音量"><output id="effectsVolumeValue"></output></label></div>
+    <p class="audio-note">留一点声音，也留一点安静。</p>
+    <p id="audioStatus" class="audio-status" role="status"></p>
+  </dialog>
 </body>
 </html>

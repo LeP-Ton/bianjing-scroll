@@ -1,8 +1,13 @@
 # 项目文档索引
 
-当前任务：会话-28起，按用户反馈移除不必要的分块方案，直接加载约 18.6 MB 的原 JPG，并保留完整分辨率与 `1:1`。继续同步公开仓库 [LeP-Ton/bianjing-scroll](https://github.com/LeP-Ton/bianjing-scroll) 与 HTTPS 网站 [入画 · 汴京寻物](https://lep-ton.github.io/bianjing-scroll/)，Pages 发布目录为 `dist/`。
+当前任务：会话-33起，为游戏制作六首不少于两分钟的配乐与动作音效；会话-36确认采用本地原创合成。继续同步公开仓库 [LeP-Ton/bianjing-scroll](https://github.com/LeP-Ton/bianjing-scroll) 与 HTTPS 网站 [入画 · 汴京寻物](https://lep-ton.github.io/bianjing-scroll/)，Pages 发布目录为 `dist/`。原图继续采用单张原始 JPG。
 
 ## 当前重要变更
+
+- `workflow/20261115225341-original-music-and-effects.md`
+  - 内容：六首原创乐谱与本地合成、七种交互音效、声音设置、独立音量及播放器异步控制。
+  - 读取场景：修改曲目、音效触发、音量、后台声音策略、制作脚本或音频发布时。
+  - 状态：六首成品总计 15:12，七种 WAV 已接入，10/10 控制器与界面回归、成品解码/文件哈希/时长/响度检查及本地浏览器交互通过；等待 Pages 发布。未完成实际听审。
 
 - `workflow/20261115223634-direct-original-jpg.md`
   - 内容：会话-28起的原 JPG 直载简化，移除 92.4 MB 切片及调度、编码工具链，保留完整原像素和原图下载。
@@ -27,6 +32,7 @@
 ## 关键记忆
 
 - 项目是无需构建的原生静态网页，`dist/` 保存可部署页面；不为预览引入框架或依赖。
+- 音频控制器、界面、实际清单分置于 `audio.js`、`audio-ui.js`、`audio-catalog.js`。配乐为按需 MP3，音效为按需 WAV；完整声音体验需 HTTP，制作工具不参与网页运行。合成音色不能描述为真实录音。
 - 主画卷直接加载 `qingming-original.jpg`，原图与世界坐标均为 `38414 × 1800`；源文件 18,637,705 字节。文件不切片、不重新编码、不降采样，不能将原 JPG 本身描述为无损。
 - 现有约 18.6 MB 原 JPG 不需要分块和额外编码工具链；旧 21 片无损 WebP 合计约 92.4 MB，已移除当前部署产物与调度逻辑，Git 历史保留。小地图缩略图只负责导航。
 - 互动点位必须与原画对应；缩放、拖拽、提示与命中使用同一套原图坐标，不再按半尺寸换算。

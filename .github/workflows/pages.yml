@@ -35,6 +35,11 @@ jobs:
           test -s dist/index.html
           test -s dist/assets/qingming-original.jpg
           node --check dist/app.js
+          node --check dist/audio.js
+          node --check dist/audio-ui.js
+          node --check dist/audio-catalog.js
+          node --test tests/audio.test.mjs
+          node scripts/check-audio-assets.mjs
 
       - name: 配置 Pages
         uses: actions/configure-pages@v5

@@ -37,7 +37,7 @@ let chapters = [
     {id:'pole',x:8337,y:1362,r:85},{id:'flatbridge',x:8765,y:1545,r:220}
   ]}
 ];
-const state = {chapter:0,found:{},selected:'hat',zoom:1,centerX:.487,centerY:.5,listOpen:true,hint:null,sound:false};
+const state = {chapter:0,found:{},selected:'hat',zoom:1,centerX:.487,centerY:.5,listOpen:true,hint:null};
 try {
   const saved=JSON.parse(localStorage.getItem('ruhua-v1'));
   if(saved && typeof saved==='object') {
@@ -50,6 +50,8 @@ try {
   }
 } catch {/* 存储不可用时仍可正常游玩。 */}
 const scene=$('scene'),world=$('paintingWorld');
+const gameAudio = window.ruhuaAudio;
+void gameAudio.setChapter(state.chapter);
 let scale=1,tx=0,ty=0,toastTimer,hintTimer,discoveryTimer,moveAnimation,completePending=false;
 world.style.width = `${ARTWORK.width}px`;
 world.style.height = `${ARTWORK.height}px`;
@@ -71,6 +73,7 @@ function renderQuest(){
     const id=button.dataset.item;
     if(isFound(id)){openDetail(id);return;}
     state.selected=id;state.hint=null;updateHint();renderQuest();
+    void gameAudio.playEffect('select');
     $('questStatus').textContent=objects[id].scene;
   }));
   $('questStatus').innerHTML=count===chapter.items.length?'此卷小物，皆已寻得':'<i></i>静心观画，慢慢寻找';
@@ -132,6 +135,7 @@ function hint(){
   let item=activeChapter().items.find(item=>item.id===state.selected&&!isFound(item.id));
   item ||= activeChapter().items.find(item=>!isFound(item.id));
   if(!item)return;
+  void gameAudio.playEffect('hint');
   state.selected=item.id;state.hint=item;renderQuest();updateHint();
   const offset=state.listOpen?Math.min(120,scene.clientWidth*.2):0;
   panTo(item.x/ARTWORK.width,item.y/ARTWORK.height,Math.max(1.25,state.zoom),offset);
@@ -142,7 +146,7 @@ function hint(){
 function discover(id){
   if(isFound(id)){openDetail(id);return;}
   state.found[`${state.chapter}:${id}`]=true;state.hint=null;clearTimeout(hintTimer);save();renderQuest();updateHint();
-  playFoundTone();showToast(`寻得 · ${objects[id].name}`);
+  void gameAudio.playEffect('found');showToast(`寻得 · ${objects[id].name}`);
   completePending=activeChapter().items.every(item=>isFound(item.id));
   const discoveredChapter=state.chapter;
   clearTimeout(discoveryTimer);
@@ -194,14 +198,31 @@ $('hintBtn').onclick=hint;
 $('collapseBtn').onclick=()=>{state.listOpen=!state.listOpen;scene.classList.toggle('list-hidden',!state.listOpen);$('collapseBtn').textContent=state.listOpen?'收起寻物笺':'展开寻物笺';$('collapseBtn').setAttribute('aria-expanded',state.listOpen);};
 $('fullscreenBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('gameFrame').requestFullscreen();}catch{showToast('当前窗口暂不支持全屏');}};
 document.addEventListener('fullscreenchange',()=>{$('fullscreenBtn').setAttribute('aria-label',document.fullscreenElement?'退出全屏':'全屏观画');updateView();});
-function switchChapter(index){clearTimeout(discoveryTimer);clearTimeout(hintTimer);state.chapter=(index+chapters.length)%chapters.length;state.selected=activeChapter().items.find(item=>!isFound(item.id))?.id||activeChapter().items[0].id;state.hint=null;completePending=false;save();renderQuest();panTo(activeChapter().center,.5,1);}
+function switchChapter(index){
+  clearTimeout(discoveryTimer);clearTimeout(hintTimer);
+  const previousChapter = state.chapter;
+  state.chapter=(index+chapters.length)%chapters.length;
+  state.selected=activeChapter().items.find(item=>!isFound(item.id))?.id||activeChapter().items[0].id;
+  state.hint=null;completePending=false;save();renderQuest();panTo(activeChapter().center,.5,1);
+  if (state.chapter !== previousChapter) {
+    void gameAudio.playEffect('chapter');
+    void gameAudio.setChapter(state.chapter);
+  }
+}
 $('prevChapter').onclick=()=>switchChapter(state.chapter-1);$('nextChapter').onclick=()=>switchChapter(state.chapter+1);
 function moveMap(event){const rect=$('minimap').getBoundingClientRect();state.centerX=(event.clientX-rect.left)/rect.width;updateView();}
 $('minimap').addEventListener('pointerdown',event=>{$('minimap').setPointerCapture(event.pointerId);moveMap(event);});
 $('minimap').addEventListener('pointermove',event=>{if(event.buttons)moveMap(event);});
 $('minimap').addEventListener('keydown',event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();state.centerX+=event.key==='ArrowLeft'?-.025:.025;updateView();}});
-function showDialog(dialog){if(!dialog.open)dialog.showModal();}
-function closeDialog(dialog){dialog.close();if(dialog.id==='detailDialog'&&completePending){completePending=false;showComplete();}}
+function showDialog(dialog,{silent=false}={}){
+  if(dialog.open)return;
+  dialog.showModal();
+  if(!silent)void gameAudio.playEffect('page-open');
+}
+function closeDialog(dialog){
+  dialog.close();void gameAudio.playEffect('page-close');
+  if(dialog.id==='detailDialog'&&completePending){completePending=false;showComplete();}
+}
 document.querySelectorAll('dialog').forEach(dialog=>{
   dialog.addEventListener('click',event=>{if(event.target.closest('[data-close]'))closeDialog(dialog);else if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)closeDialog(dialog);}});
   dialog.addEventListener('cancel',event=>{event.preventDefault();closeDialog(dialog);});
@@ -212,7 +233,7 @@ function openDetail(id,fresh=false){
     ? '<img class="museum-image" src="assets/celadon.jpg" alt="南宋龙泉窑青瓷莲瓣纹碗，器物参照"><span class="image-credit">龍泉窯 青瓷蓮瓣紋碗<br>國立故宮博物院，臺北 · CC BY 4.0</span>'
     : `${svg(item.icon,'object-art')}<span class="object-caption">器 物 意 象</span>`;
   $('detailContent').innerHTML=`<div class="detail-layout"><div class="detail-art"><span class="detail-category">${id==='bowl'?'南宋藏品 · 延伸鉴赏':`宋人百物 · ${item.category}`}</span>${artwork}</div><div class="detail-copy"><span class="found-label">${found?'已收录':'宋人百物'}</span><h2>${item.name==='瓷碗'?'宋代瓷器':item.name}</h2><div class="detail-subtitle">${item.subtitle}</div><section class="detail-section"><h3>日常之间</h3><p>${item.use}</p></section><section class="detail-section"><h3>${id==='bowl'?'延伸鉴赏':'笔墨之外'}</h3><p>${item.craft}</p></section><a class="detail-source" href="${item.source}" target="_blank" rel="noopener noreferrer">${item.sourceName} ↗</a><button class="primary-btn" id="backToScroll">${fresh?'收好这一遇':'回到画中'}<span>→</span></button></div></div>`;
-  $('backToScroll').onclick=()=>closeDialog($('detailDialog'));showDialog($('detailDialog'));
+  $('backToScroll').onclick=()=>closeDialog($('detailDialog'));showDialog($('detailDialog'),{silent:fresh});
 }
 let category='全部',onlyFound=false;
 function openCollection(foundOnly=false){onlyFound=foundOnly;category='全部';renderCollection();showDialog($('collectionDialog'));}
@@ -242,32 +263,15 @@ $('overviewNav').onclick=openOverview;$('mapExpand').onclick=openOverview;$('hel
 $('journeyNav').onclick=()=>{$('gameFrame').scrollIntoView({behavior:'smooth',block:'center'});scene.focus({preventScroll:true});};
 document.querySelector('.brand').onclick=event=>{event.preventDefault();switchChapter(0);};
 function showComplete(){
+  void gameAudio.playEffect('complete');
   $('completeObjects').innerHTML=activeChapter().items.map(({id})=>svg(objects[id].icon)).join('');
   $('completeDialog').querySelector('p').textContent=`${['〇','一','二','三','四','五','六'][activeChapter().items.length]}次相逢，记住一日汴京。`;
   const allDone=chapters.every((chapter,i)=>chapter.items.every(item=>isFound(item.id,i)));
   $('continueBtn').innerHTML=allDone?'重游这一卷 <span>→</span>':'再入下一卷 <span>→</span>';
   $('continueBtn').onclick=()=>{$('completeDialog').close();if(allDone)panTo(activeChapter().center,.5,1);else{let next=(state.chapter+1)%chapters.length;for(let i=0;i<3;i++){if(chapters[next].items.some(item=>!isFound(item.id,next)))break;next=(next+1)%3;}switchChapter(next);}};
-  showDialog($('completeDialog'));
+  showDialog($('completeDialog'),{silent:true});
 }
 $('reviewBtn').onclick=()=>{$('completeDialog').close();openCollection(true);};
-let audioContext,ambientNodes=[];
-async function toggleSound(){
-  if(state.sound){ambientNodes.forEach(node=>{try{node.stop?.();node.disconnect();}catch{}});ambientNodes=[];await audioContext?.suspend();state.sound=false;}
-  else{try{
-    audioContext ||= new (window.AudioContext||window.webkitAudioContext)();await audioContext.resume();
-    // 低通噪声与缓慢音量变化合成水声，不依赖远程音频或自动播放。
-    const buffer=audioContext.createBuffer(1,audioContext.sampleRate*4,audioContext.sampleRate),data=buffer.getChannelData(0);let last=0;
-    for(let i=0;i<data.length;i++){last=(last+(Math.random()*2-1)*.025)/1.025;data[i]=last*3;}
-    const source=audioContext.createBufferSource();source.buffer=buffer;source.loop=true;
-    const filter=audioContext.createBiquadFilter();filter.type='lowpass';filter.frequency.value=850;
-    const gain=audioContext.createGain();gain.gain.value=.24;
-    const lfo=audioContext.createOscillator(),lfoGain=audioContext.createGain();lfo.frequency.value=.13;lfoGain.gain.value=.07;lfo.connect(lfoGain).connect(gain.gain);
-    source.connect(filter).connect(gain).connect(audioContext.destination);source.start();lfo.start();ambientNodes=[source,filter,gain,lfo,lfoGain];state.sound=true;
-  }catch{showToast('声景暂不可用，请继续观画');}}
-  $('soundBtn').setAttribute('aria-pressed',state.sound);$('soundBtn').title=state.sound?'关闭汴河水声':'开启汴河水声';
-}
-function playFoundTone(){if(!state.sound||!audioContext)return;[523.25,783.99].forEach((freq,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),time=audioContext.currentTime+i*.1;oscillator.type='sine';oscillator.frequency.value=freq;gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(.07,time+.02);gain.gain.exponentialRampToValueAtTime(.001,time+.8);oscillator.connect(gain).connect(audioContext.destination);oscillator.start(time);oscillator.stop(time+.9);});}
-$('soundBtn').onclick=toggleSound;
 const painting = $('painting');
 function showPaintingError() {
   $('loadingNote').classList.remove('loaded');
