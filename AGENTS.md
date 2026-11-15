@@ -9,8 +9,8 @@
 - 使用原生 HTML、CSS、JavaScript，采用无需构建的静态站点架构，无 npm 运行依赖。
 - `dist/` 同时保存源页面和可部署产物。
 - 画卷位置、缩放、任务状态、百科视图由浏览器端逻辑管理。
-- 主画卷世界坐标使用原图的 `38414 × 1800` 像素。主图由无降采样的无损 WebP 切片组成，原始 JPG 按原字节保存；小地图缩略图不参与主画卷渲染。
-- `manifest.js` 在页面中按脚本顺序加载切片清单，`artwork.js` 根据视野加载、预取并释放图片，兼容直接以文件方式打开页面。
+- 主画卷直接使用 `dist/assets/qingming-original.jpg`，保持用户源文件字节不变，不切片、不重编码、不降采样；图片与寻物世界坐标均为 `38414 × 1800`。
+- 浏览器直接加载完整 JPG，应用只管理加载状态、重试与画卷变换。小地图缩略图只负责导航，不参与主画卷渲染。
 - 游戏进度使用 `localStorage` 保存在当前浏览器；不包含账号和服务端存档。
 - 声景使用 Web Audio API，需用户主动开启。
 - 线上版本通过 GitHub Pages 发布，公开仓库为 `LeP-Ton/bianjing-scroll`。`main` 的网页或部署工作流变更会自动部署 `dist/`。
@@ -20,11 +20,8 @@
 - `dist/index.html`：页面结构与可访问性语义。
 - `dist/styles.css`：画卷界面、百科面板、响应式布局及动效。
 - `dist/app.js`：寻物任务、画卷拖拽缩放、提示、总览、图鉴、进度和声景交互。
-- `dist/artwork.js`：原分辨率切片的视野调度、加载状态、缓存和失败重试。
-- `dist/assets/painting/`：无损 WebP 切片、页面使用的 `manifest.js` 与可读的 `tiles.json` 清单。
 - `dist/assets/qingming-original.jpg`：原始 JPG，保持用户源文件字节不变。
 - `dist/assets/`：导航缩略图、瓷器配图等其余本地视觉资源。
-- `scripts/prepare-artwork.mjs`：离线生成并逐像素验证画卷切片；编码工具不属于网页运行依赖。
 - `server.mjs`：本地静态预览服务。
 - `.github/workflows/pages.yml`：GitHub Pages 检查、打包和部署工作流。
 - `.openai/hosting.json`：早期 Sites 注册记录，保留已有标识；当前不用于 GitHub Pages 部署。
@@ -41,7 +38,7 @@ node server.mjs
 
 以服务输出的地址为准打开预览。无需安装依赖或执行构建。修改后至少检查 JavaScript 语法与资源请求，并按变更范围验证画卷交互、寻物、百科、存档和移动端。不得将未执行的检查标为通过。
 
-修改画卷资源时，还需检查 `dist/artwork.js`、`dist/assets/painting/manifest.js` 的语法及清单尺寸，并运行素材脚本的逐像素验证。原图 JPG 自身已有编码压缩；项目的无损保证指切片与源图解码像素一致，禁止将源 JPG 描述为原本无损。
+修改画卷资源时，核对原 JPG 的文件哈希与自然尺寸，并验证适屏、`1:1`、拖拽、提示和物件命中。原 JPG 自身已有编码压缩；项目只保证不再改动源文件，禁止将源 JPG 描述为原本无损。当前图片不需要切片生成、清单、缓存调度或额外编码工具链。
 
 发布时提交并推送到 GitHub 的 `main`，等待 Pages 工作流完成，再检查线上页面及主要资源。只将 `dist/` 上传为 Pages 制品，项目文档不进入网页目录。凭据只保留在会话内，不写入源码、文档或日志。
 

@@ -320,43 +320,12 @@ h1 em {
 .painting {
   position:absolute;
   inset:0;
-  pointer-events:none;
-  user-select:none
-}
-
-.painting-tile {
-  position:absolute;
   display:block;
+  width:100%;
+  height:100%;
   max-width:none;
   pointer-events:none;
-  user-select:none;
-  opacity:0
-}
-
-.painting-tile.loaded {
-  opacity:1
-}
-
-.artwork-status {
-  position:absolute;
-  top:24px;
-  left:50%;
-  transform:translateX(-50%);
-  padding:8px 14px;
-  background:#f2ead8ed;
-  border:1px solid #b3a38477;
-  font-size:10px;
-  letter-spacing:2px;
-  cursor:pointer
-}
-
-.artwork-status[hidden] {
-  display:none
-}
-
-.artwork-status:disabled {
-  color:#8d816b;
-  cursor:default
+  user-select:none
 }
 
 .scene-shade {

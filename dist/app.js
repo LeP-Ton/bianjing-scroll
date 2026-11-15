@@ -1,11 +1,7 @@
 const $ = (id) => document.getElementById(id);
 const svg = (id, cls = '') => `<svg class="${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
 const SOURCE = 'https://www.dpm.org.cn/collection/paint/228226.html';
-const ARTWORK = window.RUHUA_ARTWORK;
-if (!ARTWORK) {
-  $('loadingNote').textContent = '画卷未能展开，请刷新重试';
-  throw new Error('未能载入原画分片清单');
-}
+const ARTWORK = { width: 38414, height: 1800, original: { src: 'assets/qingming-original.jpg' } };
 const objects = {
   hat: {name:'斗笠',icon:'hat',category:'服饰',subtitle:'一顶清风，半日行路',use:'宽檐遮日，也替赶路人挡住风雨。轻便的斗笠，陪着行人穿过田野与街市。',craft:'传统斗笠以竹篾编骨，辅以叶片等材料。画中可见行人头上的宽檐笠，细部材质无法仅凭笔墨确定。',scene:'酒楼近旁，留意行人的头顶。',source:'https://www.museumschina.cn/collection/details?id=a88c1df80b1364d859f9db099a5d2ece5',sourceName:'宋竹编斗笠 · 馆藏参照'},
   umbrella: {name:'纸伞',icon:'umbrella',category:'器具',subtitle:'一方荫凉，市井片刻',use:'一柄伞，撑开街边的一方荫凉。商贩与行旅在伞下停驻，买卖之间，日子缓缓流过。',craft:'伞骨与伞面共同撑起弧形轮廓。画中的圆伞清晰可见；伞面材质以传统纸伞作理解参照，并非画面鉴定。',scene:'虹桥一端，有一面圆圆的伞。',source:SOURCE,sourceName:'清明上河图 · 故宫博物院'},
@@ -55,24 +51,8 @@ try {
 } catch {/* 存储不可用时仍可正常游玩。 */}
 const scene=$('scene'),world=$('paintingWorld');
 let scale=1,tx=0,ty=0,toastTimer,hintTimer,discoveryTimer,moveAnimation,completePending=false;
-let artworkOpened = false;
 world.style.width = `${ARTWORK.width}px`;
 world.style.height = `${ARTWORK.height}px`;
-const artworkLayer = window.createArtworkLayer($('painting'), ARTWORK, ({ready, failed}) => {
-  if (ready) {
-    artworkOpened = true;
-    $('loadingNote').classList.add('loaded');
-    $('artworkStatus').hidden = true;
-    return;
-  }
-  if (!artworkOpened) {
-    $('loadingNote').classList.toggle('loaded', failed);
-  }
-  $('artworkStatus').hidden = !artworkOpened && !failed;
-  $('artworkStatus').disabled = !failed;
-  $('artworkStatus').textContent = failed ? '重展此处' : '展卷中';
-});
-$('artworkStatus').onclick = () => artworkLayer.retry();
 const maxZoom = () => Math.max(2.75, ARTWORK.height / Math.max(1, scene.clientHeight));
 const activeChapter=()=>chapters[state.chapter];
 const isFound=(id,chapter=state.chapter)=>Boolean(state.found[`${chapter}:${id}`]);
@@ -126,7 +106,6 @@ function updateView(){
   $('minimapWindow').style.left=`${Math.max(0,-tx/fullWidth)*100}%`;
   $('minimapWindow').style.width=`${Math.min(1,width/fullWidth)*100}%`;
   $('minimap').setAttribute('aria-valuenow',Math.round(state.centerX*100));
-  artworkLayer.update(Math.max(0,-tx/scale),Math.min(ARTWORK.width,(width-tx)/scale));
   updateHint();
 }
 function updateHint(){
@@ -178,7 +157,7 @@ function inspectPoint(x,y){
 }
 const pointers=new Map();let gesture=null;
 scene.addEventListener('pointerdown',event=>{
-  if(event.target.closest('.quest-sheet,.view-tools,.scene-bottom,.artwork-status'))return;
+  if(event.target.closest('.quest-sheet,.view-tools,.scene-bottom,.loading-note'))return;
   cancelAnimationFrame(moveAnimation);scene.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
   if(pointers.size===1)gesture={startX:event.clientX,startY:event.clientY,prevX:event.clientX,prevY:event.clientY,moved:false};
   else if(pointers.size===2){const [a,b]=[...pointers.values()];gesture={pinch:Math.hypot(a.x-b.x,a.y-b.y),zoom:state.zoom,moved:true};}
@@ -199,7 +178,7 @@ function endPointer(event){
   pointers.delete(event.pointerId);if(!pointers.size){gesture=null;scene.classList.remove('dragging');}
 }
 scene.addEventListener('pointerup',endPointer);scene.addEventListener('pointercancel',endPointer);
-scene.addEventListener('wheel',event=>{if(event.target.closest('.quest-sheet'))return;event.preventDefault();const rect=scene.getBoundingClientRect();changeZoom(-Math.sign(event.deltaY)*.12,{x:event.clientX-rect.left,y:event.clientY-rect.top});},{passive:false});
+scene.addEventListener('wheel',event=>{if(event.target.closest('.quest-sheet,.loading-note'))return;event.preventDefault();const rect=scene.getBoundingClientRect();changeZoom(-Math.sign(event.deltaY)*.12,{x:event.clientX-rect.left,y:event.clientY-rect.top});},{passive:false});
 scene.addEventListener('keydown',event=>{
   if(event.target!==scene)return;
   const shifts={ArrowLeft:-1,ArrowRight:1};
@@ -289,6 +268,29 @@ async function toggleSound(){
 }
 function playFoundTone(){if(!state.sound||!audioContext)return;[523.25,783.99].forEach((freq,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),time=audioContext.currentTime+i*.1;oscillator.type='sine';oscillator.frequency.value=freq;gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(.07,time+.02);gain.gain.exponentialRampToValueAtTime(.001,time+.8);oscillator.connect(gain).connect(audioContext.destination);oscillator.start(time);oscillator.stop(time+.9);});}
 $('soundBtn').onclick=toggleSound;
+const painting = $('painting');
+function showPaintingError() {
+  $('loadingNote').classList.remove('loaded');
+  $('loadingNote').innerHTML = '<span>画卷未能完整展开</span><button id="retryPainting">重新展卷</button>';
+  $('retryPainting').onclick = () => {
+    $('loadingNote').innerHTML = '<span>展卷中</span><i></i>';
+    painting.src = ARTWORK.original.src;
+  };
+}
+function finishPaintingLoad() {
+  // 检查浏览器实际解码尺寸，避免将不完整或被缩小的资源当作原图。
+  if (painting.naturalWidth !== ARTWORK.width || painting.naturalHeight !== ARTWORK.height) {
+    showPaintingError();
+    return;
+  }
+  $('loadingNote').classList.add('loaded');
+}
+painting.addEventListener('load', finishPaintingLoad);
+painting.addEventListener('error', showPaintingError);
+if (painting.complete) {
+  if (painting.naturalWidth) finishPaintingLoad();
+  else showPaintingError();
+}
 const resizeObserver=new ResizeObserver(updateView);resizeObserver.observe(scene);
 state.centerX=activeChapter().center;state.selected=activeChapter().items.find(item=>!isFound(item.id))?.id||activeChapter().items[0].id;
 renderQuest();updateView();

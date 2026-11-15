@@ -33,10 +33,8 @@ jobs:
       - name: 检查页面与脚本
         run: |
           test -s dist/index.html
+          test -s dist/assets/qingming-original.jpg
           node --check dist/app.js
-          node --check dist/artwork.js
-          node --check dist/assets/painting/manifest.js
-          node --test tests/artwork.test.mjs
 
       - name: 配置 Pages
         uses: actions/configure-pages@v5
