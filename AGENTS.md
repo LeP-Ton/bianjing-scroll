@@ -11,7 +11,7 @@
 - 画卷位置、缩放、任务状态、百科视图由浏览器端逻辑管理。
 - 游戏进度使用 `localStorage` 保存在当前浏览器；不包含账号和服务端存档。
 - 声景使用 Web Audio API，需用户主动开启。
-- 站点通过 Sites 发布，初始访问权限为私有；保持现有权限，除非用户明确要求改变。
+- 线上版本通过 GitHub Pages 发布，公开仓库为 `LeP-Ton/bianjing-scroll`。`main` 的网页或部署工作流变更会自动部署 `dist/`。
 
 ## 主要目录
 
@@ -20,7 +20,8 @@
 - `dist/app.js`：寻物任务、画卷拖拽缩放、提示、总览、图鉴、进度和声景交互。
 - `dist/assets/`：原画和总览等本地视觉资源。
 - `server.mjs`：本地静态预览服务。
-- `.openai/hosting.json`：Sites 项目标识与静态发布目录，保留已有 `project_id`。
+- `.github/workflows/pages.yml`：GitHub Pages 检查、打包和部署工作流。
+- `.openai/hosting.json`：早期 Sites 注册记录，保留已有标识；当前不用于 GitHub Pages 部署。
 - `.agentdocs/index.md`：变更文档导航与长期有价值的开发记忆。
 - `.agentdocs/workflow/`：每次任务的语义变更记录。
 
@@ -34,7 +35,7 @@ node server.mjs
 
 以服务输出的地址为准打开预览。无需安装依赖或执行构建。修改后至少检查 JavaScript 语法与资源请求，并按变更范围验证画卷交互、寻物、百科、存档和移动端。不得将未执行的检查标为通过。
 
-发布时使用 Sites 工作流同步精确源状态并打包 `dist/`，确认发布成功后再报告线上地址。凭据只保留在会话内，不写入源码、文档或日志。
+发布时提交并推送到 GitHub 的 `main`，等待 Pages 工作流完成，再检查线上页面及主要资源。只将 `dist/` 上传为 Pages 制品，项目文档不进入网页目录。凭据只保留在会话内，不写入源码、文档或日志。
 
 ## 项目检索顺序
 

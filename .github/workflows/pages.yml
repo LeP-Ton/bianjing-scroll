@@ -1,0 +1,48 @@
+name: 部署汴京寻物
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'dist/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: 发布画卷
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 获取源码
+        uses: actions/checkout@v6
+
+      - name: 检查页面与脚本
+        run: |
+          test -s dist/index.html
+          node --check dist/app.js
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v5
+
+      - name: 上传网页
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+      - name: 发布网页
+        id: deployment
+        uses: actions/deploy-pages@v4

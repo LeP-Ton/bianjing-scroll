@@ -2,6 +2,8 @@
 
 在《清明上河图》中寻物，读一段宋人日常。
 
+[在线游玩](https://lep-ton.github.io/bianjing-scroll/) · [GitHub 仓库](https://github.com/LeP-Ton/bianjing-scroll)
+
 ## 打开游戏
 
 直接使用浏览器打开 `dist/index.html`，即可开始游玩。
@@ -33,4 +35,10 @@ node server.mjs
 
 ## 维护
 
-先读 `AGENTS.md`，再读 `.agentdocs/index.md` 与相关变更文档。当前版本按用户选择仅保留本地，未上传源码、未上线。
+先读 `AGENTS.md`，再读 `.agentdocs/index.md` 与相关变更文档。
+
+## 发布
+
+网页由 GitHub Pages 托管，部署目录为 `dist/`。推送 `main` 上的网页或工作流变更后，GitHub Actions 会检查脚本、上传网页并部署；也可在 Actions 页面手动运行“部署汴京寻物”。
+
+所有本地资源均使用相对路径，兼容 GitHub Pages 的仓库子路径。没有构建步骤，也不需要 npm 或 Jekyll。初次配置仓库时，Pages 的构建来源需要设为 GitHub Actions。
