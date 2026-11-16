@@ -1,6 +1,6 @@
 # 项目文档索引
 
-当前需求：[REQ-20261116204247 · 画卷预览与交互动效](workflow/REQ-20261116204247-画卷交互动效/README.md)。前阶段四项交互修复已上线；当前将长览改用原始 JPG，保留底部缩略图，并验证清晰度及定位后发布。公开仓库为 [LeP-Ton/bianjing-scroll](https://github.com/LeP-Ton/bianjing-scroll)，线上为 [入画 · 汴京寻物](https://lep-ton.github.io/bianjing-scroll/)，Pages 发布目录为 `dist/`。
+当前需求：[REQ-20261116204247 · 画卷预览与交互动效](workflow/REQ-20261116204247-画卷交互动效/README.md)。四项交互修复及长览原始 JPG 清晰度返修均已上线；底部继续使用缩略图，清晰度与滚动定位已验证。公开仓库为 [LeP-Ton/bianjing-scroll](https://github.com/LeP-Ton/bianjing-scroll)，线上为 [入画 · 汴京寻物](https://lep-ton.github.io/bianjing-scroll/)，Pages 发布目录为 `dist/`。
 
 ## 当前重要变更
 
@@ -8,7 +8,7 @@
   - 内容：长览等比横向预览及原图清晰度返修、导航指针隔离、方向键逐帧平滑起停、按钮缩放统一缓动与输入接管。
   - 读取场景：修改画卷动画、缩放、键盘移动、底部导航、长览布局或定位时。
   - 状态：已上线。部署提交 `fa0deab`，Actions `43872208102` 成功；本地与真实线上各 21 项浏览器检查通过，线上方向键稳定段约 60 帧/秒，HTML/JS/CSS 哈希与本地成品一致。实体触屏、跨浏览器与人工手感仍未验证，详情见需求入口。
-  - 当前返修：会话-19起长览改为原始 JPG，底部保留缩略图；两倍像素密度下本地 11 项检查及截图对比通过，待发布与线上验收，见需求 README 最新阶段。
+  - 最新返修：长览原始 JPG 已上线，提交 `ae061e6`、Actions `43965137342` 成功；两倍像素密度下本地与线上各 11 项检查通过，完整原 JPG 的 SHA256 与源文件一致，底部保留缩略图，见需求 README 最新阶段。
 
 - `workflow/20261115225341-original-music-and-effects.md`
   - 内容：六首原创乐谱与本地合成、七种交互音效、声音设置、独立音量及播放器异步控制。
