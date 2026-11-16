@@ -50,12 +50,18 @@ try {
   }
 } catch {/* 存储不可用时仍可正常游玩。 */}
 const scene=$('scene'),world=$('paintingWorld');
+const minimap=$('minimap'),minimapWindow=$('minimapWindow'),zoomLabel=$('zoomLabel');
+const viewSize={width:scene.clientWidth,height:scene.clientHeight};
+const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const gameAudio = window.ruhuaAudio;
 void gameAudio.setChapter(state.chapter);
 let scale=1,tx=0,ty=0,toastTimer,hintTimer,discoveryTimer,moveAnimation,completePending=false;
+let viewTarget=null,displayedZoom,displayedPosition;
+let keyboardAnimation=0,keyboardTime=0,keyboardSpeed=0,keyboardSurface=null;
+const panKeys=new Set();
 world.style.width = `${ARTWORK.width}px`;
 world.style.height = `${ARTWORK.height}px`;
-const maxZoom = () => Math.max(2.75, ARTWORK.height / Math.max(1, scene.clientHeight));
+const maxZoom = () => Math.max(2.75, ARTWORK.height / Math.max(1, viewSize.height));
 const activeChapter=()=>chapters[state.chapter];
 const isFound=(id,chapter=state.chapter)=>Boolean(state.found[`${chapter}:${id}`]);
 const save=()=>{try{localStorage.setItem('ruhua-v1',JSON.stringify({found:state.found,chapter:state.chapter}));}catch{}};
@@ -97,18 +103,20 @@ function renderHotspots(){
   });
 }
 function updateView(){
-  const width=scene.clientWidth,height=scene.clientHeight;
-  state.zoom = Math.min(state.zoom, maxZoom());
+  const {width,height}=viewSize;
+  state.zoom = Math.max(1,Math.min(state.zoom, maxZoom()));
   scale=height/ARTWORK.height*state.zoom;
   const fullWidth=ARTWORK.width*scale,fullHeight=ARTWORK.height*scale;
   state.centerX=Math.max(width/fullWidth/2,Math.min(1-width/fullWidth/2,state.centerX));
   state.centerY=Math.max(height/fullHeight/2,Math.min(1-height/fullHeight/2,state.centerY));
   tx=width/2-state.centerX*fullWidth;ty=height/2-state.centerY*fullHeight;
-  world.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
-  $('zoomLabel').innerHTML=`${Math.round(state.zoom*100)}<small>%</small>`;
-  $('minimapWindow').style.left=`${Math.max(0,-tx/fullWidth)*100}%`;
-  $('minimapWindow').style.width=`${Math.min(1,width/fullWidth)*100}%`;
-  $('minimap').setAttribute('aria-valuenow',Math.round(state.centerX*100));
+  world.style.transform=`translate3d(${tx}px,${ty}px,0) scale(${scale})`;
+  const zoomPercent=Math.round(state.zoom*100),position=Math.round(state.centerX*100);
+  // 动画逐帧只更新必要的属性，避免重建文字和重复触发布局测量。
+  if(displayedZoom!==zoomPercent){zoomLabel.firstChild.nodeValue=String(zoomPercent);displayedZoom=zoomPercent;}
+  minimapWindow.style.left=`${Math.max(0,-tx/fullWidth)*100}%`;
+  minimapWindow.style.width=`${Math.min(1,width/fullWidth)*100}%`;
+  if(displayedPosition!==position){minimap.setAttribute('aria-valuenow',position);displayedPosition=position;}
   updateHint();
 }
 function updateHint(){
@@ -117,17 +125,43 @@ function updateHint(){
   ring.style.left=`${state.hint.x*scale+tx}px`;ring.style.top=`${state.hint.y*scale+ty}px`;
   const size=Math.max(90,Math.min(180,state.hint.r*scale*3));ring.style.width=ring.style.height=`${size}px`;
 }
+function stopViewAnimation(){
+  cancelAnimationFrame(moveAnimation);moveAnimation=0;viewTarget=null;
+}
+function stopKeyboardPan(){
+  cancelAnimationFrame(keyboardAnimation);keyboardAnimation=0;keyboardSpeed=0;
+  keyboardSurface=null;panKeys.clear();
+}
 function panTo(x,y=.5,zoom=state.zoom,offset=0){
-  cancelAnimationFrame(moveAnimation);const startX=state.centerX,startY=state.centerY,startZoom=state.zoom;
-  const targetX=x-offset/(ARTWORK.width*(scene.clientHeight/ARTWORK.height)*zoom),start=performance.now();
-  const duration=matchMedia('(prefers-reduced-motion: reduce)').matches?0:650;
-  function animate(time){const p=duration?Math.min(1,(time-start)/duration):1,t=1-Math.pow(1-p,3);state.centerX=startX+(targetX-startX)*t;state.centerY=startY+(y-startY)*t;state.zoom=startZoom+(zoom-startZoom)*t;updateView();if(p<1)moveAnimation=requestAnimationFrame(animate);}
+  stopKeyboardPan();stopViewAnimation();
+  const startX=state.centerX,startY=state.centerY,startZoom=state.zoom;
+  zoom=Math.max(1,Math.min(maxZoom(),zoom));
+  const targetScale=viewSize.height/ARTWORK.height*zoom;
+  const halfWidth=viewSize.width/(ARTWORK.width*targetScale)/2,halfHeight=1/zoom/2;
+  const targetX=Math.max(halfWidth,Math.min(1-halfWidth,x-offset/(ARTWORK.width*targetScale)));
+  const targetY=Math.max(halfHeight,Math.min(1-halfHeight,y)),start=performance.now();
+  const duration=reducedMotion.matches?0:650;
+  viewTarget={zoom};
+  function animate(time){
+    const p=duration?Math.min(1,(time-start)/duration):1,t=1-Math.pow(1-p,3);
+    state.centerX=startX+(targetX-startX)*t;state.centerY=startY+(targetY-startY)*t;
+    state.zoom=startZoom+(zoom-startZoom)*t;updateView();
+    if(p<1)moveAnimation=requestAnimationFrame(animate);
+    else{moveAnimation=0;viewTarget=null;}
+  }
   moveAnimation=requestAnimationFrame(animate);
 }
 function changeZoom(delta,anchor){
-  cancelAnimationFrame(moveAnimation);
+  if(!anchor){
+    // 快速连按累积到尚未完成的目标比例，同时从当前画面平滑接续。
+    const next=Math.min(maxZoom(),Math.max(1,(viewTarget?.zoom??state.zoom)+delta));
+    panTo(state.centerX,state.centerY,next);return;
+  }
+  stopKeyboardPan();stopViewAnimation();
   const oldScale=scale,next=Math.min(maxZoom(),Math.max(1,state.zoom+delta));
-  if(anchor){const px=(anchor.x-tx)/oldScale,py=(anchor.y-ty)/oldScale;const nextScale=scene.clientHeight/ARTWORK.height*next;state.centerX=(px-(anchor.x-scene.clientWidth/2)/nextScale)/ARTWORK.width;state.centerY=(py-(anchor.y-scene.clientHeight/2)/nextScale)/ARTWORK.height;}
+  const px=(anchor.x-tx)/oldScale,py=(anchor.y-ty)/oldScale,nextScale=viewSize.height/ARTWORK.height*next;
+  state.centerX=(px-(anchor.x-viewSize.width/2)/nextScale)/ARTWORK.width;
+  state.centerY=(py-(anchor.y-viewSize.height/2)/nextScale)/ARTWORK.height;
   state.zoom=next;updateView();
 }
 function showToast(text){clearTimeout(toastTimer);$('sceneToast').textContent=text;$('sceneToast').classList.add('show');toastTimer=setTimeout(()=>$('sceneToast').classList.remove('show'),3000);}
@@ -161,8 +195,8 @@ function inspectPoint(x,y){
 }
 const pointers=new Map();let gesture=null;
 scene.addEventListener('pointerdown',event=>{
-  if(event.target.closest('.quest-sheet,.view-tools,.scene-bottom,.loading-note'))return;
-  cancelAnimationFrame(moveAnimation);scene.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  if(event.button!==0||event.target.closest('.quest-sheet,.view-tools,.scene-bottom,.loading-note'))return;
+  stopKeyboardPan();stopViewAnimation();scene.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
   if(pointers.size===1)gesture={startX:event.clientX,startY:event.clientY,prevX:event.clientX,prevY:event.clientY,moved:false};
   else if(pointers.size===2){const [a,b]=[...pointers.values()];gesture={pinch:Math.hypot(a.x-b.x,a.y-b.y),zoom:state.zoom,moved:true};}
 });
@@ -183,21 +217,53 @@ function endPointer(event){
 }
 scene.addEventListener('pointerup',endPointer);scene.addEventListener('pointercancel',endPointer);
 scene.addEventListener('wheel',event=>{if(event.target.closest('.quest-sheet,.loading-note'))return;event.preventDefault();const rect=scene.getBoundingClientRect();changeZoom(-Math.sign(event.deltaY)*.12,{x:event.clientX-rect.left,y:event.clientY-rect.top});},{passive:false});
+function animateKeyboardPan(time){
+  // 速度以屏幕像素/秒计算，不依赖系统重复按键频率或显示器刷新率。
+  const elapsed=Math.min(32,Math.max(0,time-keyboardTime));keyboardTime=time;
+  const direction=Number(panKeys.has('ArrowRight'))-Number(panKeys.has('ArrowLeft'));
+  const targetSpeed=direction*viewSize.width*1.1;
+  keyboardSpeed+=(targetSpeed-keyboardSpeed)*(1-Math.exp(-elapsed/(direction?80:65)));
+  state.centerX+=keyboardSpeed*elapsed/1000/(ARTWORK.width*scale);updateView();
+  if(panKeys.size||Math.abs(keyboardSpeed)>.5)keyboardAnimation=requestAnimationFrame(animateKeyboardPan);
+  else stopKeyboardPan();
+}
+function startKeyboardPan(event){
+  if(event.target!==event.currentTarget||!['ArrowLeft','ArrowRight'].includes(event.key))return;
+  event.preventDefault();
+  if(reducedMotion.matches){
+    stopKeyboardPan();stopViewAnimation();
+    state.centerX+=(event.key==='ArrowLeft'?-1:1)*viewSize.width/(ARTWORK.width*scale)*.12;
+    updateView();return;
+  }
+  if(event.repeat||panKeys.has(event.key))return;
+  stopViewAnimation();
+  if(keyboardSurface&&keyboardSurface!==event.currentTarget)stopKeyboardPan();
+  keyboardSurface=event.currentTarget;panKeys.add(event.key);
+  if(!keyboardAnimation){
+    // 给短按一个轻微起步，保证在首帧前松键也能得到可见且平滑的反馈。
+    keyboardSpeed=(event.key==='ArrowLeft'?-1:1)*viewSize.width*.35;
+    keyboardTime=performance.now();keyboardAnimation=requestAnimationFrame(animateKeyboardPan);
+  }
+}
+scene.addEventListener('keydown',startKeyboardPan);
+minimap.addEventListener('keydown',startKeyboardPan);
+window.addEventListener('keyup',event=>panKeys.delete(event.key));
+scene.addEventListener('blur',stopKeyboardPan);minimap.addEventListener('blur',stopKeyboardPan);
+window.addEventListener('blur',stopKeyboardPan);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopKeyboardPan();stopViewAnimation();}});
 scene.addEventListener('keydown',event=>{
   if(event.target!==scene)return;
-  const shifts={ArrowLeft:-1,ArrowRight:1};
-  if(event.key in shifts){event.preventDefault();state.centerX+=shifts[event.key]*scene.clientWidth/(ARTWORK.width*scale)*.22;updateView();}
   if(event.key==='+'||event.key==='='){event.preventDefault();changeZoom(.25);}
   if(event.key==='-'){event.preventDefault();changeZoom(-.25);}
   if(event.key==='0')panTo(activeChapter().center,.5,1);
 });
 $('zoomIn').onclick=()=>changeZoom(.25);$('zoomOut').onclick=()=>changeZoom(-.25);
-$('nativeView').onclick=()=>panTo(state.centerX,state.centerY,Math.max(1,ARTWORK.height/scene.clientHeight));
+$('nativeView').onclick=()=>panTo(state.centerX,state.centerY,Math.max(1,ARTWORK.height/viewSize.height));
 $('resetView').onclick=()=>{state.hint=null;panTo(activeChapter().center,.5,1);};
 $('hintBtn').onclick=hint;
 $('collapseBtn').onclick=()=>{state.listOpen=!state.listOpen;scene.classList.toggle('list-hidden',!state.listOpen);$('collapseBtn').textContent=state.listOpen?'收起寻物笺':'展开寻物笺';$('collapseBtn').setAttribute('aria-expanded',state.listOpen);};
 $('fullscreenBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('gameFrame').requestFullscreen();}catch{showToast('当前窗口暂不支持全屏');}};
-document.addEventListener('fullscreenchange',()=>{$('fullscreenBtn').setAttribute('aria-label',document.fullscreenElement?'退出全屏':'全屏观画');updateView();});
+document.addEventListener('fullscreenchange',()=>{$('fullscreenBtn').setAttribute('aria-label',document.fullscreenElement?'退出全屏':'全屏观画');resizeView();});
 function switchChapter(index){
   clearTimeout(discoveryTimer);clearTimeout(hintTimer);
   const previousChapter = state.chapter;
@@ -210,12 +276,25 @@ function switchChapter(index){
   }
 }
 $('prevChapter').onclick=()=>switchChapter(state.chapter-1);$('nextChapter').onclick=()=>switchChapter(state.chapter+1);
-function moveMap(event){const rect=$('minimap').getBoundingClientRect();state.centerX=(event.clientX-rect.left)/rect.width;updateView();}
-$('minimap').addEventListener('pointerdown',event=>{$('minimap').setPointerCapture(event.pointerId);moveMap(event);});
-$('minimap').addEventListener('pointermove',event=>{if(event.buttons)moveMap(event);});
-$('minimap').addEventListener('keydown',event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();state.centerX+=event.key==='ArrowLeft'?-.025:.025;updateView();}});
+let mapPointer=null,mapDragOffset=0;
+function mapPosition(event){const rect=minimap.getBoundingClientRect();return(event.clientX-rect.left)/rect.width;}
+function moveMap(event){state.centerX=mapPosition(event)-mapDragOffset;updateView();}
+minimap.addEventListener('pointerdown',event=>{
+  if(event.button!==0||mapPointer!==null)return;
+  event.preventDefault();stopKeyboardPan();stopViewAnimation();
+  minimap.focus({preventScroll:true});mapPointer=event.pointerId;
+  const position=mapPosition(event),halfWidth=viewSize.width/(ARTWORK.width*scale)/2;
+  // 拖动视野框时保留抓取位置，点击框外时才将该处置于画卷中央。
+  mapDragOffset=Math.abs(position-state.centerX)<=halfWidth?position-state.centerX:0;
+  minimap.setPointerCapture(event.pointerId);moveMap(event);
+});
+minimap.addEventListener('pointermove',event=>{if(event.pointerId===mapPointer)moveMap(event);});
+function endMapPointer(event){if(event.pointerId===mapPointer)mapPointer=null;}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])minimap.addEventListener(type,endMapPointer);
+minimap.addEventListener('dragstart',event=>event.preventDefault());
 function showDialog(dialog,{silent=false}={}){
   if(dialog.open)return;
+  stopKeyboardPan();
   dialog.showModal();
   if(!silent)void gameAudio.playEffect('page-open');
 }
@@ -250,7 +329,10 @@ function openOverview(){
   $('overviewChapters').innerHTML=chapters.map((chapter,i)=>`<button data-chapter="${i}"><span class="numeral">${chapter.numeral}</span><div><strong>${chapter.name}</strong><small>${chapter.subtitle}</small></div></button>`).join('');
   $('overviewChapters').querySelectorAll('button').forEach(button=>button.onclick=()=>{$('overviewDialog').close();switchChapter(Number(button.dataset.chapter));});showDialog($('overviewDialog'));
 }
-$('fullScroll').onclick=event=>{const rect=$('fullScroll').getBoundingClientRect();const x=(event.clientX-rect.left)/rect.width;$('overviewDialog').close();panTo(x,.5,1);};
+$('fullScroll').querySelector('img').onclick=event=>{
+  const rect=event.currentTarget.getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width;
+  $('overviewDialog').close();panTo(x,.5,1);
+};
 $('collectionNav').onclick=()=>openCollection();$('progressBtn').onclick=()=>openCollection(true);
 $('mobileCollectionBtn').onclick=()=>openCollection();
 $('mapExpand').setAttribute('aria-label','长卷全览');
@@ -295,6 +377,7 @@ if (painting.complete) {
   if (painting.naturalWidth) finishPaintingLoad();
   else showPaintingError();
 }
-const resizeObserver=new ResizeObserver(updateView);resizeObserver.observe(scene);
+function resizeView(){viewSize.width=scene.clientWidth;viewSize.height=scene.clientHeight;updateView();}
+const resizeObserver=new ResizeObserver(resizeView);resizeObserver.observe(scene);
 state.centerX=activeChapter().center;state.selected=activeChapter().items.find(item=>!isFound(item.id))?.id||activeChapter().items[0].id;
 renderQuest();updateView();

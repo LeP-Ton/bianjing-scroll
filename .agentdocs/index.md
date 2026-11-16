@@ -1,8 +1,13 @@
 # 项目文档索引
 
-当前任务：会话-33起，为游戏制作六首不少于两分钟的配乐与动作音效；会话-36确认采用本地原创合成。继续同步公开仓库 [LeP-Ton/bianjing-scroll](https://github.com/LeP-Ton/bianjing-scroll) 与 HTTPS 网站 [入画 · 汴京寻物](https://lep-ton.github.io/bianjing-scroll/)，Pages 发布目录为 `dist/`。原图继续采用单张原始 JPG。
+当前需求：[REQ-20261116204247 · 画卷预览与交互动效](workflow/REQ-20261116204247-画卷交互动效/README.md)，修复长览变形、底部导航拖拽、左右键平滑移动和按钮缩放缓动。公开仓库为 [LeP-Ton/bianjing-scroll](https://github.com/LeP-Ton/bianjing-scroll)，线上为 [入画 · 汴京寻物](https://lep-ton.github.io/bianjing-scroll/)，Pages 发布目录为 `dist/`。原图继续采用单张原始 JPG。
 
 ## 当前重要变更
+
+- [REQ-20261116204247 · 画卷预览与交互动效](workflow/REQ-20261116204247-画卷交互动效/README.md)
+  - 内容：长览等比横向预览、导航指针隔离、方向键逐帧平滑起停、按钮缩放统一缓动与输入接管。
+  - 读取场景：修改画卷动画、缩放、键盘移动、底部导航、长览布局或定位时。
+  - 状态：本地 21 项浏览器检查及现有 10 项音频测试通过，方向键稳定段采样约 60 帧/秒。会话-10起按用户要求提交并发布至 GitHub Pages，线上验证进行中，详情见需求入口。
 
 - `workflow/20261115225341-original-music-and-effects.md`
   - 内容：六首原创乐谱与本地合成、七种交互音效、声音设置、独立音量及播放器异步控制。
