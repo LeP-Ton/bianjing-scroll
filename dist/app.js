@@ -50,7 +50,7 @@ try {
   }
 } catch {/* 存储不可用时仍可正常游玩。 */}
 const scene=$('scene'),world=$('paintingWorld');
-const minimap=$('minimap'),minimapWindow=$('minimapWindow'),zoomLabel=$('zoomLabel');
+const minimap=$('minimap'),minimapTrack=$('minimapTrack'),minimapWindow=$('minimapWindow'),zoomLabel=$('zoomLabel');
 const viewSize={width:scene.clientWidth,height:scene.clientHeight};
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const gameAudio = window.ruhuaAudio;
@@ -58,6 +58,7 @@ void gameAudio.setChapter(state.chapter);
 let scale=1,tx=0,ty=0,toastTimer,hintTimer,discoveryTimer,moveAnimation,completePending=false;
 let viewTarget=null,displayedZoom,displayedPosition;
 let keyboardAnimation=0,keyboardTime=0,keyboardSpeed=0,keyboardSurface=null;
+let mapDrag=null,mapPanFrame=0,mapPanTime=0,mapViewportWidth=0,mapTrackWidth=0;
 const panKeys=new Set();
 world.style.width = `${ARTWORK.width}px`;
 world.style.height = `${ARTWORK.height}px`;
@@ -66,6 +67,7 @@ const activeChapter=()=>chapters[state.chapter];
 const isFound=(id,chapter=state.chapter)=>Boolean(state.found[`${chapter}:${id}`]);
 const save=()=>{try{localStorage.setItem('ruhua-v1',JSON.stringify({found:state.found,chapter:state.chapter}));}catch{}};
 function renderQuest(){
+  const focusedItem=$('itemGrid').contains(document.activeElement)?document.activeElement.dataset.item:null;
   const chapter=activeChapter();
   $('sceneTitle').textContent=chapter.name;$('sceneSubtitle').textContent=chapter.subtitle;
   document.querySelector('.chapter-number').textContent=chapter.numeral;
@@ -73,7 +75,6 @@ function renderQuest(){
   $('totalCount').textContent=chapter.items.length;
   const count=chapter.items.filter(item=>isFound(item.id)).length;
   $('foundCount').textContent=count;
-  document.querySelector('.quest-instruction').textContent=`${['〇','一','二','三','四','五','六'][chapter.items.length]}件小物，藏在这一卷烟火里。`;
   $('itemGrid').innerHTML=chapter.items.map(({id})=>{const item=objects[id],found=isFound(id);return `<button class="quest-item ${state.selected===id?'selected':''} ${found?'found':''}" data-item="${id}" aria-label="${item.name}，${found?'已发现，查看百科':'待寻找'}" aria-pressed="${state.selected===id}">${svg(item.icon)}<span>${item.name}</span>${found?'<b class="found-stamp">已<br>寻得</b>':''}</button>`;}).join('');
   $('itemGrid').querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{
     const id=button.dataset.item;
@@ -83,10 +84,16 @@ function renderQuest(){
     $('questStatus').textContent=objects[id].scene;
   }));
   $('questStatus').innerHTML=count===chapter.items.length?'此卷小物，皆已寻得':'<i></i>静心观画，慢慢寻找';
-  $('hintBtn').innerHTML=svg('search')+(count===chapter.items.length?'此卷已收齐':'借一缕灵光');
+  $('hintBtn').title=count===chapter.items.length?'本卷物品已全部寻得':'提示当前未寻得的物品';
   $('hintBtn').disabled=count===chapter.items.length;
   $('allProgress').textContent=Object.values(state.found).filter(Boolean).length||'〇';
   renderHotspots();
+  // 重绘任务时保留键盘焦点，窄屏仅滚动底部物品条。
+  if(focusedItem){
+    const button=$('itemGrid').querySelector(`[data-item="${focusedItem}"]`);
+    button?.focus({preventScroll:true});
+    button?.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+  }
 }
 function renderHotspots(){
   $('hotspots').innerHTML=activeChapter().items.map(item=>{
@@ -98,7 +105,7 @@ function renderHotspots(){
     button.addEventListener('focus',()=>{
       if(!button.matches(':focus-visible'))return;
       const item=activeChapter().items.find(item=>item.id===button.dataset.hotspot);
-      panTo(item.x/ARTWORK.width,item.y/ARTWORK.height,state.zoom,state.listOpen?Math.min(120,scene.clientWidth*.2):0);
+      panTo(item.x/ARTWORK.width,item.y/ARTWORK.height,state.zoom);
     });
   });
 }
@@ -110,6 +117,7 @@ function updateView(){
   state.centerX=Math.max(width/fullWidth/2,Math.min(1-width/fullWidth/2,state.centerX));
   state.centerY=Math.max(height/fullHeight/2,Math.min(1-height/fullHeight/2,state.centerY));
   tx=width/2-state.centerX*fullWidth;ty=height/2-state.centerY*fullHeight;
+  if(!mapDrag)revealMapWindow();
   world.style.transform=`translate3d(${tx}px,${ty}px,0) scale(${scale})`;
   const zoomPercent=Math.round(state.zoom*100),position=Math.round(state.centerX*100);
   // 动画逐帧只更新必要的属性，避免重建文字和重复触发布局测量。
@@ -132,13 +140,13 @@ function stopKeyboardPan(){
   cancelAnimationFrame(keyboardAnimation);keyboardAnimation=0;keyboardSpeed=0;
   keyboardSurface=null;panKeys.clear();
 }
-function panTo(x,y=.5,zoom=state.zoom,offset=0){
+function panTo(x,y=.5,zoom=state.zoom){
   stopKeyboardPan();stopViewAnimation();
   const startX=state.centerX,startY=state.centerY,startZoom=state.zoom;
   zoom=Math.max(1,Math.min(maxZoom(),zoom));
   const targetScale=viewSize.height/ARTWORK.height*zoom;
   const halfWidth=viewSize.width/(ARTWORK.width*targetScale)/2,halfHeight=1/zoom/2;
-  const targetX=Math.max(halfWidth,Math.min(1-halfWidth,x-offset/(ARTWORK.width*targetScale)));
+  const targetX=Math.max(halfWidth,Math.min(1-halfWidth,x));
   const targetY=Math.max(halfHeight,Math.min(1-halfHeight,y)),start=performance.now();
   const duration=reducedMotion.matches?0:650;
   viewTarget={zoom};
@@ -171,8 +179,7 @@ function hint(){
   if(!item)return;
   void gameAudio.playEffect('hint');
   state.selected=item.id;state.hint=item;renderQuest();updateHint();
-  const offset=state.listOpen?Math.min(120,scene.clientWidth*.2):0;
-  panTo(item.x/ARTWORK.width,item.y/ARTWORK.height,Math.max(1.25,state.zoom),offset);
+  panTo(item.x/ARTWORK.width,item.y/ARTWORK.height,Math.max(1.25,state.zoom));
   $('questStatus').textContent=objects[item.id].scene;
   showToast(`留意微光处 · ${objects[item.id].name}`);
   clearTimeout(hintTimer);hintTimer=setTimeout(()=>{state.hint=null;updateHint();},16000);
@@ -195,7 +202,7 @@ function inspectPoint(x,y){
 }
 const pointers=new Map();let gesture=null;
 scene.addEventListener('pointerdown',event=>{
-  if(event.button!==0||event.target.closest('.quest-sheet,.view-tools,.scene-bottom,.loading-note'))return;
+  if(event.button!==0||event.target.closest('.loading-note'))return;
   stopKeyboardPan();stopViewAnimation();scene.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
   if(pointers.size===1)gesture={startX:event.clientX,startY:event.clientY,prevX:event.clientX,prevY:event.clientY,moved:false};
   else if(pointers.size===2){const [a,b]=[...pointers.values()];gesture={pinch:Math.hypot(a.x-b.x,a.y-b.y),zoom:state.zoom,moved:true};}
@@ -216,7 +223,7 @@ function endPointer(event){
   pointers.delete(event.pointerId);if(!pointers.size){gesture=null;scene.classList.remove('dragging');}
 }
 scene.addEventListener('pointerup',endPointer);scene.addEventListener('pointercancel',endPointer);
-scene.addEventListener('wheel',event=>{if(event.target.closest('.quest-sheet,.loading-note'))return;event.preventDefault();const rect=scene.getBoundingClientRect();changeZoom(-Math.sign(event.deltaY)*.12,{x:event.clientX-rect.left,y:event.clientY-rect.top});},{passive:false});
+scene.addEventListener('wheel',event=>{if(event.target.closest('.loading-note'))return;event.preventDefault();const rect=scene.getBoundingClientRect();changeZoom(-Math.sign(event.deltaY)*.12,{x:event.clientX-rect.left,y:event.clientY-rect.top});},{passive:false});
 function animateKeyboardPan(time){
   // 速度以屏幕像素/秒计算，不依赖系统重复按键频率或显示器刷新率。
   const elapsed=Math.min(32,Math.max(0,time-keyboardTime));keyboardTime=time;
@@ -258,10 +265,15 @@ scene.addEventListener('keydown',event=>{
   if(event.key==='0')panTo(activeChapter().center,.5,1);
 });
 $('zoomIn').onclick=()=>changeZoom(.25);$('zoomOut').onclick=()=>changeZoom(-.25);
-$('nativeView').onclick=()=>panTo(state.centerX,state.centerY,Math.max(1,ARTWORK.height/viewSize.height));
 $('resetView').onclick=()=>{state.hint=null;panTo(activeChapter().center,.5,1);};
 $('hintBtn').onclick=hint;
-$('collapseBtn').onclick=()=>{state.listOpen=!state.listOpen;scene.classList.toggle('list-hidden',!state.listOpen);$('collapseBtn').textContent=state.listOpen?'收起寻物笺':'展开寻物笺';$('collapseBtn').setAttribute('aria-expanded',state.listOpen);};
+$('collapseBtn').onclick=()=>{
+  state.listOpen=!state.listOpen;
+  $('itemGrid').parentElement.hidden=!state.listOpen;
+  $('collapseBtn').setAttribute('aria-expanded',state.listOpen);
+  const label=state.listOpen?'收起寻物笺':'展开寻物笺';
+  $('collapseBtn').setAttribute('aria-label',label);$('collapseBtn').title=label;
+};
 $('fullscreenBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('gameFrame').requestFullscreen();}catch{showToast('当前窗口暂不支持全屏');}};
 document.addEventListener('fullscreenchange',()=>{$('fullscreenBtn').setAttribute('aria-label',document.fullscreenElement?'退出全屏':'全屏观画');resizeView();});
 function switchChapter(index){
@@ -276,22 +288,95 @@ function switchChapter(index){
   }
 }
 $('prevChapter').onclick=()=>switchChapter(state.chapter-1);$('nextChapter').onclick=()=>switchChapter(state.chapter+1);
-let mapPointer=null,mapDragOffset=0;
-function mapPosition(event){const rect=minimap.getBoundingClientRect();return(event.clientX-rect.left)/rect.width;}
-function moveMap(event){state.centerX=mapPosition(event)-mapDragOffset;updateView();}
+function mapWindowHalfWidth(){
+  return Math.min(mapViewportWidth,mapTrackWidth,viewSize.width/(ARTWORK.width*scale)*mapTrackWidth)/2;
+}
+function revealMapWindow(){
+  if(mapTrackWidth<=mapViewportWidth)return;
+  const center=state.centerX*mapTrackWidth;
+  const half=mapWindowHalfWidth();
+  const scroll=minimap.scrollLeft;
+  if(center-half<scroll)minimap.scrollLeft=center-half;
+  else if(center+half>scroll+mapViewportWidth)minimap.scrollLeft=center+half-mapViewportWidth;
+}
+function moveMapDrag(elapsed){
+  const {left,x,offset}=mapDrag;
+  const center=x-left-offset;
+  const maxScroll=Math.max(0,mapTrackWidth-mapViewportWidth);
+  if(!maxScroll){
+    state.centerX=center/mapTrackWidth;
+    updateView();
+    return false;
+  }
+
+  const minCenter=mapWindowHalfWidth();
+  const maxCenter=mapViewportWidth-minCenter;
+  // 红框比可见区域还宽时，只按指针偏向的一侧续移。
+  const direction=center<=minCenter&&center<maxCenter?-1:center>=maxCenter&&center>minCenter?1:0;
+  const overrun=direction<0?minCenter-center:center-maxCenter;
+  // 红框停在可见边缘，逐帧移动其下方的预览。拖得越靠外，续移越快。
+  if(direction&&elapsed){
+    const speed=Math.min(360,150+overrun*5);
+    mapDrag.scroll=Math.max(0,Math.min(maxScroll,mapDrag.scroll+direction*speed*elapsed/1000));
+    minimap.scrollLeft=mapDrag.scroll;
+  }
+  state.centerX=(mapDrag.scroll+Math.max(minCenter,Math.min(maxCenter,center)))/mapTrackWidth;
+  updateView();
+  return direction<0?mapDrag.scroll>0:direction>0&&mapDrag.scroll<maxScroll;
+}
+function animateMapDrag(time){
+  mapPanFrame=0;
+  if(!mapDrag)return;
+  const elapsed=Math.min(32,Math.max(0,time-mapPanTime));
+  mapPanTime=time;
+  if(moveMapDrag(elapsed))mapPanFrame=requestAnimationFrame(animateMapDrag);
+}
+function stopMapDrag(){
+  if(!mapDrag)return;
+  const {id}=mapDrag;
+  mapDrag=null;
+  cancelAnimationFrame(mapPanFrame);
+  mapPanFrame=0;
+  if(minimap.hasPointerCapture(id))minimap.releasePointerCapture(id);
+  revealMapWindow();
+}
 minimap.addEventListener('pointerdown',event=>{
-  if(event.button!==0||mapPointer!==null)return;
+  if(event.button!==0||!event.isPrimary||mapDrag||!mapTrackWidth)return;
   event.preventDefault();stopKeyboardPan();stopViewAnimation();
-  minimap.focus({preventScroll:true});mapPointer=event.pointerId;
-  const position=mapPosition(event),halfWidth=viewSize.width/(ARTWORK.width*scale)/2;
-  // 拖动视野框时保留抓取位置，点击框外时才将该处置于画卷中央。
-  mapDragOffset=Math.abs(position-state.centerX)<=halfWidth?position-state.centerX:0;
-  minimap.setPointerCapture(event.pointerId);moveMap(event);
+  minimap.focus({preventScroll:true});
+  const left=minimap.getBoundingClientRect().left;
+  const position=event.clientX-minimapTrack.getBoundingClientRect().left;
+  const offset=position-state.centerX*mapTrackWidth;
+  const grabbing=Math.abs(offset)<=viewSize.width/(ARTWORK.width*scale)*mapTrackWidth/2;
+  mapDrag={id:event.pointerId,left,x:event.clientX,scroll:minimap.scrollLeft,offset:grabbing?offset:0};
+  minimap.setPointerCapture(event.pointerId);
+  if(!grabbing){state.centerX=position/mapTrackWidth;updateView();}
 });
-minimap.addEventListener('pointermove',event=>{if(event.pointerId===mapPointer)moveMap(event);});
-function endMapPointer(event){if(event.pointerId===mapPointer)mapPointer=null;}
-for(const type of ['pointerup','pointercancel','lostpointercapture'])minimap.addEventListener(type,endMapPointer);
+minimap.addEventListener('pointermove',event=>{
+  if(event.pointerId!==mapDrag?.id||event.clientX===mapDrag.x)return;
+  mapDrag.x=event.clientX;
+  const continues=moveMapDrag(0);
+  if(continues&&!mapPanFrame){
+    mapPanTime=performance.now();
+    mapPanFrame=requestAnimationFrame(animateMapDrag);
+  }else if(!continues){
+    cancelAnimationFrame(mapPanFrame);
+    mapPanFrame=0;
+  }
+});
+for(const type of ['pointerup','pointercancel','lostpointercapture']){
+  minimap.addEventListener(type,event=>{if(event.pointerId===mapDrag?.id)stopMapDrag();});
+}
+window.addEventListener('blur',stopMapDrag);
+window.addEventListener('resize',stopMapDrag);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopMapDrag();});
 minimap.addEventListener('dragstart',event=>event.preventDefault());
+new ResizeObserver(()=>{
+  mapViewportWidth=minimap.getBoundingClientRect().width;
+  mapTrackWidth=minimapTrack.getBoundingClientRect().width;
+  if(mapDrag)stopMapDrag();
+  else revealMapWindow();
+}).observe(minimap);
 function showDialog(dialog,{silent=false}={}){
   if(dialog.open)return;
   stopKeyboardPan();
@@ -309,7 +394,7 @@ document.querySelectorAll('dialog').forEach(dialog=>{
 function openDetail(id,fresh=false){
   const item=objects[id];const found=Object.keys(state.found).some(key=>key.endsWith(`:${id}`)&&state.found[key]);
   const artwork=id==='bowl'
-    ? '<img class="museum-image" src="assets/celadon.jpg" alt="南宋龙泉窑青瓷莲瓣纹碗，器物参照"><span class="image-credit">龍泉窯 青瓷蓮瓣紋碗<br>國立故宮博物院，臺北 · CC BY 4.0</span>'
+    ? '<img class="museum-image" src="assets/celadon.jpg" alt="南宋龙泉窑青瓷莲瓣纹碗，器物参照"><span class="image-credit">龍泉窯 青瓷蓮瓣紋碗<br>國立故宮博物院，臺北 · CC BY <span class="number">4.0</span></span>'
     : `${svg(item.icon,'object-art')}<span class="object-caption">器 物 意 象</span>`;
   $('detailContent').innerHTML=`<div class="detail-layout"><div class="detail-art"><span class="detail-category">${id==='bowl'?'南宋藏品 · 延伸鉴赏':`宋人百物 · ${item.category}`}</span>${artwork}</div><div class="detail-copy"><span class="found-label">${found?'已收录':'宋人百物'}</span><h2>${item.name==='瓷碗'?'宋代瓷器':item.name}</h2><div class="detail-subtitle">${item.subtitle}</div><section class="detail-section"><h3>日常之间</h3><p>${item.use}</p></section><section class="detail-section"><h3>${id==='bowl'?'延伸鉴赏':'笔墨之外'}</h3><p>${item.craft}</p></section><a class="detail-source" href="${item.source}" target="_blank" rel="noopener noreferrer">${item.sourceName} ↗</a><button class="primary-btn" id="backToScroll">${fresh?'收好这一遇':'回到画中'}<span>→</span></button></div></div>`;
   $('backToScroll').onclick=()=>closeDialog($('detailDialog'));showDialog($('detailDialog'),{silent:fresh});
@@ -354,6 +439,54 @@ function showComplete(){
   showDialog($('completeDialog'),{silent:true});
 }
 $('reviewBtn').onclick=()=>{$('completeDialog').close();openCollection(true);};
+
+function setupScrollShadows(){
+  const targets=new Map();
+  for(const frame of document.querySelectorAll('.scroll-shadow-x')){
+    targets.set(frame.firstElementChild,frame);
+  }
+  for(const dialog of document.querySelectorAll('dialog'))targets.set(dialog,dialog);
+
+  const pending=new Set();
+  const scrollable=overflow=>overflow==='auto'||overflow==='scroll'||overflow==='overlay';
+  let frameId=0;
+  function refresh(){
+    frameId=0;
+    for(const scroller of pending){
+      const target=targets.get(scroller);
+      const {clientWidth,clientHeight,scrollWidth,scrollHeight,scrollLeft,scrollTop}=scroller;
+      const {overflowX,overflowY}=getComputedStyle(scroller);
+      // 小地图由红框带动，虽然没有浏览器滚动条，也要提示当前裁掉的一侧。
+      const horizontal=clientWidth>0&&(scroller===minimap||scrollable(overflowX));
+      const vertical=target===scroller&&clientHeight>0&&scrollable(overflowY);
+      target.toggleAttribute('data-scroll-left',horizontal&&scrollLeft>1);
+      target.toggleAttribute('data-scroll-right',horizontal&&scrollWidth-clientWidth-scrollLeft>1);
+      target.toggleAttribute('data-scroll-top',vertical&&scrollTop>1);
+      target.toggleAttribute('data-scroll-bottom',vertical&&scrollHeight-clientHeight-scrollTop>1);
+    }
+    pending.clear();
+  }
+  function schedule(scroller){
+    pending.add(scroller);
+    if(!frameId)frameId=requestAnimationFrame(refresh);
+  }
+  const resizeObserver=new ResizeObserver(entries=>{
+    for(const {target} of entries)schedule(target);
+  });
+  for(const scroller of targets.keys()){
+    const queue=()=>schedule(scroller);
+    scroller.addEventListener('scroll',queue,{passive:true});
+    scroller.addEventListener('load',queue,true);
+    resizeObserver.observe(scroller);
+    // 任务重绘和弹窗开关会改变可滚动范围，但不会总是改变容器尺寸。
+    new MutationObserver(queue).observe(scroller,{
+      subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['open','hidden']
+    });
+    queue();
+  }
+  document.fonts.ready.then(()=>{for(const scroller of targets.keys())schedule(scroller);});
+}
+
 const painting = $('painting');
 function showPaintingError() {
   $('loadingNote').classList.remove('loaded');
@@ -381,3 +514,4 @@ function resizeView(){viewSize.width=scene.clientWidth;viewSize.height=scene.cli
 const resizeObserver=new ResizeObserver(resizeView);resizeObserver.observe(scene);
 state.centerX=activeChapter().center;state.selected=activeChapter().items.find(item=>!isFound(item.id))?.id||activeChapter().items[0].id;
 renderQuest();updateView();
+setupScrollShadows();
