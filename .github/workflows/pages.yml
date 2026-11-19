@@ -1,11 +1,6 @@
-name: 部署汴京寻物
+name: 部署汴京寻物预览
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'dist/**'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -17,7 +12,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: 发布画卷
+    name: 发布同仓库预览
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,27 +22,47 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: 获取源码
+      - name: 检出当前正式版本
         uses: actions/checkout@v6
+        with:
+          ref: a7a8aa9f824cdb5ee4905e6894938d8b31daa5ec
+          path: production
+          persist-credentials: false
 
-      - name: 检查页面与脚本
+      - name: 检出预览分支
+        uses: actions/checkout@v6
+        with:
+          path: candidate
+          persist-credentials: false
+
+      - name: 组装并核对整站制品
         run: |
-          test -s dist/index.html
-          test -s dist/assets/qingming-original.jpg
-          node --check dist/app.js
-          node --check dist/audio.js
-          node --check dist/audio-ui.js
-          node --check dist/audio-catalog.js
-          node --test tests/audio.test.mjs
-          node scripts/check-audio-assets.mjs
+          test -s production/dist/index.html
+          test -s candidate/dist/index.html
+          test ! -e production/dist/preview
+          node --check production/dist/app.js
+          node --check candidate/dist/app.js
+          mkdir -p pages/preview
+          cp -a production/dist/. pages/
+          cp -a candidate/dist/. pages/preview/
+          diff -qr --exclude=preview production/dist pages
+          diff -qr candidate/dist pages/preview
 
       - name: 配置 Pages
         uses: actions/configure-pages@v5
 
-      - name: 上传网页
+      - name: 上传整站制品
         uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: pages
+
+      - name: 核对正式分支仍为基线版本
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          production_sha=$(git -C production rev-parse HEAD)
+          main_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')
+          test "$main_sha" = "$production_sha"
 
       - name: 发布网页
         id: deployment
