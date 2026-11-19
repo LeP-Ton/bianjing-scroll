@@ -1,8 +1,13 @@
 # 项目文档索引
 
-当前需求：[REQ-20261116204247 · 画卷预览与交互动效](workflow/REQ-20261116204247-画卷交互动效/README.md)。四项交互修复及长览原始 JPG 清晰度返修均已上线；底部继续使用缩略图，清晰度与滚动定位已验证。公开仓库为 [LeP-Ton/bianjing-scroll](https://github.com/LeP-Ton/bianjing-scroll)，线上为 [入画 · 汴京寻物](https://lep-ton.github.io/bianjing-scroll/)，Pages 发布目录为 `dist/`。
+当前需求：[REQ-20261117151742 · 布局空间优化](workflow/REQ-20261117151742-布局空间优化/README.md)。公开仓库为 [LeP-Ton/bianjing-scroll](https://github.com/LeP-Ton/bianjing-scroll)，正式站为 [入画 · 汴京寻物](https://lep-ton.github.io/bianjing-scroll/)，Pages 发布目录为 `dist/`。
 
 ## 当前重要变更
+
+- [REQ-20261117151742 · 布局空间优化](workflow/REQ-20261117151742-布局空间优化/README.md)
+  - 涵盖主分支首屏布局、寻物笺限宽、小地图居中、等比导航与界面数字字体。
+  - 调整画卷可见高度、操作栏或寻物笺时读取。
+  - 主分支版本已完成本地检查，待用户验收。独立预览版本的来源见需求入口。
 
 - [REQ-20261116204247 · 画卷预览与交互动效](workflow/REQ-20261116204247-画卷交互动效/README.md)
   - 内容：长览等比横向预览及原图清晰度返修、导航指针隔离、方向键逐帧平滑起停、按钮缩放统一缓动与输入接管。

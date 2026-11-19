@@ -50,7 +50,7 @@ try {
   }
 } catch {/* 存储不可用时仍可正常游玩。 */}
 const scene=$('scene'),world=$('paintingWorld');
-const minimap=$('minimap'),minimapWindow=$('minimapWindow'),zoomLabel=$('zoomLabel');
+const minimap=$('minimap'),minimapTrack=$('minimapTrack'),minimapWindow=$('minimapWindow'),zoomLabel=$('zoomLabel');
 const viewSize={width:scene.clientWidth,height:scene.clientHeight};
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const gameAudio = window.ruhuaAudio;
@@ -58,6 +58,7 @@ void gameAudio.setChapter(state.chapter);
 let scale=1,tx=0,ty=0,toastTimer,hintTimer,discoveryTimer,moveAnimation,completePending=false;
 let viewTarget=null,displayedZoom,displayedPosition;
 let keyboardAnimation=0,keyboardTime=0,keyboardSpeed=0,keyboardSurface=null;
+let mapDrag=null,mapPanFrame=0,mapPanTime=0,mapTrackWidth=0,mapViewportWidth=0;
 const panKeys=new Set();
 world.style.width = `${ARTWORK.width}px`;
 world.style.height = `${ARTWORK.height}px`;
@@ -67,6 +68,8 @@ const isFound=(id,chapter=state.chapter)=>Boolean(state.found[`${chapter}:${id}`
 const save=()=>{try{localStorage.setItem('ruhua-v1',JSON.stringify({found:state.found,chapter:state.chapter}));}catch{}};
 function renderQuest(){
   const chapter=activeChapter();
+  const grid=$('itemGrid'),scrollTop=grid.scrollTop;
+  const focusedItem=grid.contains(document.activeElement)?document.activeElement.dataset.item:null;
   $('sceneTitle').textContent=chapter.name;$('sceneSubtitle').textContent=chapter.subtitle;
   document.querySelector('.chapter-number').textContent=chapter.numeral;
   $('chapterOrdinal').textContent=chapter.ordinal;$('chapterName').textContent=chapter.name;
@@ -74,8 +77,10 @@ function renderQuest(){
   const count=chapter.items.filter(item=>isFound(item.id)).length;
   $('foundCount').textContent=count;
   document.querySelector('.quest-instruction').textContent=`${['〇','一','二','三','四','五','六'][chapter.items.length]}件小物，藏在这一卷烟火里。`;
-  $('itemGrid').innerHTML=chapter.items.map(({id})=>{const item=objects[id],found=isFound(id);return `<button class="quest-item ${state.selected===id?'selected':''} ${found?'found':''}" data-item="${id}" aria-label="${item.name}，${found?'已发现，查看百科':'待寻找'}" aria-pressed="${state.selected===id}">${svg(item.icon)}<span>${item.name}</span>${found?'<b class="found-stamp">已<br>寻得</b>':''}</button>`;}).join('');
-  $('itemGrid').querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{
+  grid.innerHTML=chapter.items.map(({id})=>{const item=objects[id],found=isFound(id);return `<button class="quest-item ${state.selected===id?'selected':''} ${found?'found':''}" data-item="${id}" aria-label="${item.name}，${found?'已发现，查看百科':'待寻找'}" aria-pressed="${state.selected===id}">${svg(item.icon)}<span>${item.name}</span>${found?'<b class="found-stamp">已<br>寻得</b>':''}</button>`;}).join('');
+  grid.scrollTop=scrollTop;
+  if(focusedItem)grid.querySelector(`[data-item="${focusedItem}"]`)?.focus({preventScroll:true});
+  grid.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{
     const id=button.dataset.item;
     if(isFound(id)){openDetail(id);return;}
     state.selected=id;state.hint=null;updateHint();renderQuest();
@@ -116,6 +121,7 @@ function updateView(){
   if(displayedZoom!==zoomPercent){zoomLabel.firstChild.nodeValue=String(zoomPercent);displayedZoom=zoomPercent;}
   minimapWindow.style.left=`${Math.max(0,-tx/fullWidth)*100}%`;
   minimapWindow.style.width=`${Math.min(1,width/fullWidth)*100}%`;
+  if(!mapDrag)revealMapWindow();
   if(displayedPosition!==position){minimap.setAttribute('aria-valuenow',position);displayedPosition=position;}
   updateHint();
 }
@@ -269,29 +275,98 @@ function switchChapter(index){
   const previousChapter = state.chapter;
   state.chapter=(index+chapters.length)%chapters.length;
   state.selected=activeChapter().items.find(item=>!isFound(item.id))?.id||activeChapter().items[0].id;
-  state.hint=null;completePending=false;save();renderQuest();panTo(activeChapter().center,.5,1);
+  state.hint=null;completePending=false;save();
+  $('itemGrid').scrollTop=0;renderQuest();panTo(activeChapter().center,.5,1);
   if (state.chapter !== previousChapter) {
     void gameAudio.playEffect('chapter');
     void gameAudio.setChapter(state.chapter);
   }
 }
 $('prevChapter').onclick=()=>switchChapter(state.chapter-1);$('nextChapter').onclick=()=>switchChapter(state.chapter+1);
-let mapPointer=null,mapDragOffset=0;
-function mapPosition(event){const rect=minimap.getBoundingClientRect();return(event.clientX-rect.left)/rect.width;}
-function moveMap(event){state.centerX=mapPosition(event)-mapDragOffset;updateView();}
+function mapWindowHalfWidth(){
+  return Math.min(mapViewportWidth,mapTrackWidth,viewSize.width/(ARTWORK.width*scale)*mapTrackWidth)/2;
+}
+function revealMapWindow(){
+  if(mapTrackWidth<=mapViewportWidth)return;
+  const center=state.centerX*mapTrackWidth,half=mapWindowHalfWidth();
+  const scroll=minimap.scrollLeft;
+  if(center-half<scroll)minimap.scrollLeft=center-half;
+  else if(center+half>scroll+mapViewportWidth)minimap.scrollLeft=center+half-mapViewportWidth;
+}
+function moveMapDrag(elapsed){
+  const {left,x,offset}=mapDrag;
+  const center=x-left-offset;
+  const maxScroll=Math.max(0,mapTrackWidth-mapViewportWidth);
+  if(!maxScroll){
+    state.centerX=center/mapTrackWidth;
+    updateView();
+    return false;
+  }
+  const minCenter=mapWindowHalfWidth(),maxCenter=mapViewportWidth-minCenter;
+  const direction=center<=minCenter&&center<maxCenter?-1:center>=maxCenter&&center>minCenter?1:0;
+  if(direction&&elapsed){
+    // 视野框贴住可见边缘时，继续移动其下方的完整预览。
+    const overrun=direction<0?minCenter-center:center-maxCenter;
+    const speed=Math.min(360,150+overrun*5);
+    mapDrag.scroll=Math.max(0,Math.min(maxScroll,mapDrag.scroll+direction*speed*elapsed/1000));
+    minimap.scrollLeft=mapDrag.scroll;
+  }
+  state.centerX=(mapDrag.scroll+Math.max(minCenter,Math.min(maxCenter,center)))/mapTrackWidth;
+  updateView();
+  return direction<0?mapDrag.scroll>0:direction>0&&mapDrag.scroll<maxScroll;
+}
+function animateMapDrag(time){
+  const elapsed=Math.min(32,Math.max(0,time-mapPanTime));
+  mapPanTime=time;
+  mapPanFrame=moveMapDrag(elapsed)?requestAnimationFrame(animateMapDrag):0;
+}
+function stopMapDrag(){
+  if(!mapDrag)return;
+  const {id}=mapDrag;
+  mapDrag=null;
+  cancelAnimationFrame(mapPanFrame);
+  mapPanFrame=0;
+  if(minimap.hasPointerCapture(id))minimap.releasePointerCapture(id);
+  revealMapWindow();
+}
 minimap.addEventListener('pointerdown',event=>{
-  if(event.button!==0||mapPointer!==null)return;
+  if(event.button!==0||!event.isPrimary||mapDrag||!mapTrackWidth)return;
   event.preventDefault();stopKeyboardPan();stopViewAnimation();
-  minimap.focus({preventScroll:true});mapPointer=event.pointerId;
-  const position=mapPosition(event),halfWidth=viewSize.width/(ARTWORK.width*scale)/2;
-  // 拖动视野框时保留抓取位置，点击框外时才将该处置于画卷中央。
-  mapDragOffset=Math.abs(position-state.centerX)<=halfWidth?position-state.centerX:0;
-  minimap.setPointerCapture(event.pointerId);moveMap(event);
+  minimap.focus({preventScroll:true});
+  const left=minimap.getBoundingClientRect().left,scroll=minimap.scrollLeft;
+  const position=event.clientX-left+scroll,offset=position-state.centerX*mapTrackWidth;
+  const grabbing=Math.abs(offset)<=viewSize.width/(ARTWORK.width*scale)*mapTrackWidth/2;
+  // 拖动视野框时保留抓取位置，点击框外时才将对应原画位置置于中央。
+  mapDrag={id:event.pointerId,left,x:event.clientX,scroll,offset:grabbing?offset:0};
+  minimap.setPointerCapture(event.pointerId);
+  if(!grabbing){state.centerX=position/mapTrackWidth;updateView();}
 });
-minimap.addEventListener('pointermove',event=>{if(event.pointerId===mapPointer)moveMap(event);});
-function endMapPointer(event){if(event.pointerId===mapPointer)mapPointer=null;}
-for(const type of ['pointerup','pointercancel','lostpointercapture'])minimap.addEventListener(type,endMapPointer);
+minimap.addEventListener('pointermove',event=>{
+  if(event.pointerId!==mapDrag?.id||event.clientX===mapDrag.x)return;
+  mapDrag.x=event.clientX;
+  const continues=moveMapDrag(0);
+  if(continues&&!mapPanFrame){
+    mapPanTime=performance.now();
+    mapPanFrame=requestAnimationFrame(animateMapDrag);
+  }else if(!continues){
+    cancelAnimationFrame(mapPanFrame);
+    mapPanFrame=0;
+  }
+});
+for(const type of ['pointerup','pointercancel','lostpointercapture']){
+  minimap.addEventListener(type,event=>{if(event.pointerId===mapDrag?.id)stopMapDrag();});
+}
+window.addEventListener('blur',stopMapDrag);
+window.addEventListener('resize',stopMapDrag);
 minimap.addEventListener('dragstart',event=>event.preventDefault());
+const mapResizeObserver=new ResizeObserver(()=>{
+  mapTrackWidth=minimapTrack.getBoundingClientRect().width;
+  mapViewportWidth=minimap.getBoundingClientRect().width;
+  if(mapDrag)stopMapDrag();
+  else revealMapWindow();
+});
+mapResizeObserver.observe(minimap);
+mapResizeObserver.observe(minimapTrack);
 function showDialog(dialog,{silent=false}={}){
   if(dialog.open)return;
   stopKeyboardPan();
@@ -309,7 +384,7 @@ document.querySelectorAll('dialog').forEach(dialog=>{
 function openDetail(id,fresh=false){
   const item=objects[id];const found=Object.keys(state.found).some(key=>key.endsWith(`:${id}`)&&state.found[key]);
   const artwork=id==='bowl'
-    ? '<img class="museum-image" src="assets/celadon.jpg" alt="南宋龙泉窑青瓷莲瓣纹碗，器物参照"><span class="image-credit">龍泉窯 青瓷蓮瓣紋碗<br>國立故宮博物院，臺北 · CC BY 4.0</span>'
+    ? '<img class="museum-image" src="assets/celadon.jpg" alt="南宋龙泉窑青瓷莲瓣纹碗，器物参照"><span class="image-credit">龍泉窯 青瓷蓮瓣紋碗<br>國立故宮博物院，臺北 · CC BY <span class="number">4.0</span></span>'
     : `${svg(item.icon,'object-art')}<span class="object-caption">器 物 意 象</span>`;
   $('detailContent').innerHTML=`<div class="detail-layout"><div class="detail-art"><span class="detail-category">${id==='bowl'?'南宋藏品 · 延伸鉴赏':`宋人百物 · ${item.category}`}</span>${artwork}</div><div class="detail-copy"><span class="found-label">${found?'已收录':'宋人百物'}</span><h2>${item.name==='瓷碗'?'宋代瓷器':item.name}</h2><div class="detail-subtitle">${item.subtitle}</div><section class="detail-section"><h3>日常之间</h3><p>${item.use}</p></section><section class="detail-section"><h3>${id==='bowl'?'延伸鉴赏':'笔墨之外'}</h3><p>${item.craft}</p></section><a class="detail-source" href="${item.source}" target="_blank" rel="noopener noreferrer">${item.sourceName} ↗</a><button class="primary-btn" id="backToScroll">${fresh?'收好这一遇':'回到画中'}<span>→</span></button></div></div>`;
   $('backToScroll').onclick=()=>closeDialog($('detailDialog'));showDialog($('detailDialog'),{silent:fresh});
@@ -335,7 +410,6 @@ $('fullScroll').querySelector('img').onclick=event=>{
 };
 $('collectionNav').onclick=()=>openCollection();$('progressBtn').onclick=()=>openCollection(true);
 $('mobileCollectionBtn').onclick=()=>openCollection();
-$('mapExpand').setAttribute('aria-label','长卷全览');
 const originalLink=document.createElement('a');
 originalLink.href=ARTWORK.original.src;
 originalLink.download='清明上河图-原图.jpg';
