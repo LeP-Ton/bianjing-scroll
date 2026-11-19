@@ -41,13 +41,32 @@ jobs:
           node --test tests/audio.test.mjs
           node scripts/check-audio-assets.mjs
 
+      - name: 获取已验收的预览版本
+        uses: actions/checkout@v6
+        with:
+          ref: 8aaecae3621f223fe9ac65ca857286dfab465bc5
+          path: pages-preview-source
+          persist-credentials: false
+
+      - name: 组装正式版与预览页
+        run: |
+          test -s pages-preview-source/dist/index.html
+          test -s pages-preview-source/dist/assets/qingming-original.jpg
+          test ! -e dist/preview
+          site="$RUNNER_TEMP/pages-site"
+          mkdir -p "$site/preview"
+          cp -a dist/. "$site/"
+          cp -a pages-preview-source/dist/. "$site/preview/"
+          diff -qr --exclude=preview dist "$site"
+          diff -qr pages-preview-source/dist "$site/preview"
+
       - name: 配置 Pages
         uses: actions/configure-pages@v5
 
       - name: 上传网页
         uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: ${{ runner.temp }}/pages-site
 
       - name: 发布网页
         id: deployment
